@@ -10,6 +10,7 @@ use crossterm::{
     style::{self, Colorize},
     terminal, ExecutableCommand, QueueableCommand, Result,
 };
+use rand::Rng;
 
 const TOP_LEFT: &'static str = "┌";
 const TOP_RIGHT: &'static str = "┐";
@@ -34,81 +35,105 @@ fn game_loop() -> Result<()> {
     let width = width - 1;
     let height = height - 3;
 
+    let timer = Instant::now();
     let mut previous = Instant::now();
-    let mut delta: Duration = Duration::from_millis(0);
+    let mut delta = Duration::from_millis(0);
+    let mut rng = rand::thread_rng();
+
+    terminal::enable_raw_mode()?;
+    stdout
+        .queue(terminal::EnterAlternateScreen)?
+        .queue(cursor::Hide)?
+        .flush()?;
 
     loop {
         let now = Instant::now();
         delta += now.duration_since(previous);
         previous = now;
 
-        poll(Duration::from_millis(10))?;
+        // poll(Duration::from_millis(10))?;
 
         while delta >= GAME_TICK {
             delta -= GAME_TICK;
-            sleep(Duration::from_millis(10));
             // TODO update
         }
 
-        draw(&mut stdout, width, height)?;
+        let coord: (u16, u16) = (rng.gen_range(1..width - 1), rng.gen_range(1..height - 1));
+
+        draw(&mut stdout, width, height, &coord)?;
 
         let elapsed_time = Instant::now().duration_since(previous);
         if elapsed_time < GAME_TICK {
             sleep(GAME_TICK - elapsed_time);
         }
+
+        if Instant::now().duration_since(timer) >= Duration::from_millis(10_000) {
+            break;
+        }
     }
+
+    terminal::disable_raw_mode()?;
+    stdout
+        .queue(terminal::LeaveAlternateScreen)?
+        .queue(cursor::Show)?
+        .flush()?;
 
     Ok(())
 }
 
-fn draw(stdout: &mut Stdout, width: u16, height: u16) -> Result<()> {
+fn draw(stdout: &mut Stdout, width: u16, height: u16, coord: &(u16, u16)) -> Result<()> {
     stdout.queue(terminal::Clear(terminal::ClearType::All))?;
+    //     .queue(cursor::Hide)?;
 
-    for y in 0..height {
-        for x in 0..width {
-            if y == 0 && x == 0 {
-                stdout
-                    .queue(cursor::MoveTo(x, y))?
-                    .queue(style::PrintStyledContent(TOP_LEFT.cyan()))?;
-                continue;
-            }
+    stdout
+        .queue(cursor::MoveTo(coord.0, coord.1))?
+        .queue(style::PrintStyledContent(CELL.red()))?;
 
-            if y == 0 && x == width - 1 {
-                stdout
-                    .queue(cursor::MoveTo(x, y))?
-                    .queue(style::PrintStyledContent(TOP_RIGHT.cyan()))?;
-                continue;
-            }
+    // for y in 0..height {
+    //     for x in 0..width {
+    //         if y == 0 && x == 0 {
+    //             stdout
+    //                 .queue(cursor::MoveTo(x, y))?
+    //                 .queue(style::PrintStyledContent(TOP_LEFT.cyan()))?;
+    //             continue;
+    //         }
 
-            if y == height - 1 && x == width - 1 {
-                stdout
-                    .queue(cursor::MoveTo(x, y))?
-                    .queue(style::PrintStyledContent(BOTTOM_RIGHT.cyan()))?;
-                continue;
-            }
+    //         if y == 0 && x == width - 1 {
+    //             stdout
+    //                 .queue(cursor::MoveTo(x, y))?
+    //                 .queue(style::PrintStyledContent(TOP_RIGHT.cyan()))?;
+    //             continue;
+    //         }
 
-            if y == height - 1 && x == 0 {
-                stdout
-                    .queue(cursor::MoveTo(x, y))?
-                    .queue(style::PrintStyledContent(BOTTOM_LEFT.cyan()))?;
-                continue;
-            }
+    //         if y == height - 1 && x == width - 1 {
+    //             stdout
+    //                 .queue(cursor::MoveTo(x, y))?
+    //                 .queue(style::PrintStyledContent(BOTTOM_RIGHT.cyan()))?;
+    //             continue;
+    //         }
 
-            if (y == 0 || y == height - 1) && x <= width - 1 {
-                stdout
-                    .queue(cursor::MoveTo(x, y))?
-                    .queue(style::PrintStyledContent(HORIZONTAL_LINE.cyan()))?;
-                continue;
-            }
+    //         if y == height - 1 && x == 0 {
+    //             stdout
+    //                 .queue(cursor::MoveTo(x, y))?
+    //                 .queue(style::PrintStyledContent(BOTTOM_LEFT.cyan()))?;
+    //             continue;
+    //         }
 
-            if (x == 0 || x == width - 1) && y <= height - 1 {
-                stdout
-                    .queue(cursor::MoveTo(x, y))?
-                    .queue(style::PrintStyledContent(VERTICAL_LINE.cyan()))?;
-                continue;
-            }
-        }
-    }
+    //         if (y == 0 || y == height - 1) && x <= width - 1 {
+    //             stdout
+    //                 .queue(cursor::MoveTo(x, y))?
+    //                 .queue(style::PrintStyledContent(HORIZONTAL_LINE.cyan()))?;
+    //             continue;
+    //         }
+
+    //         if (x == 0 || x == width - 1) && y <= height - 1 {
+    //             stdout
+    //                 .queue(cursor::MoveTo(x, y))?
+    //                 .queue(style::PrintStyledContent(VERTICAL_LINE.cyan()))?;
+    //             continue;
+    //         }
+    //     }
+    // }
 
     stdout
         // -- first block
