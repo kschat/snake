@@ -6,17 +6,17 @@ use std::{cell::RefCell, io::stdout, iter::repeat_with, time::Duration};
 
 use anyhow::{Context, Result};
 use event::Event;
-use game_loop::{GameLoop, GameLoopSignal, GameScene};
-use point::{AbsPoint, Point};
 use rand::{prelude::ThreadRng, Rng};
 
 use crossterm::{event, style::Color, terminal};
-use renderer::{DrawInstruction, Renderer, Style};
 
-mod game_loop;
-mod point;
-mod renderer;
-mod timestep;
+use engine::{
+    game_loop::{GameLoop, GameLoopSignal, GameScene},
+    point::{AbsPoint, Point},
+    renderer::{DrawInstruction, Renderer, Style},
+};
+
+mod engine;
 
 const ACC: f32 = 15.0;
 const GAME_OVER: &'static str = "Game over";

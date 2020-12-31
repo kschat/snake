@@ -3,7 +3,7 @@ use std::{io::Write, thread::sleep, time::Duration};
 use anyhow::{anyhow, Result};
 use crossterm::event::{self, Event};
 
-use crate::{
+use super::{
     renderer::{DrawInstruction, Renderer},
     timestep::Timestep,
 };

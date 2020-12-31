@@ -7,9 +7,9 @@ use crossterm::{
     terminal, QueueableCommand,
 };
 
-use crate::point::{AbsPoint, Point};
+use super::point::{AbsPoint, Point};
 
-const CELL: &'static str = "█";
+const PIXEL: &'static str = "█";
 
 #[derive(Debug)]
 pub struct Pixel {
@@ -133,7 +133,7 @@ impl<'a> DrawInstruction<'a> {
                     for column in 0..width {
                         let position = AbsPoint::from(*position) + Point::new(column, row);
                         *buffer.get_mut_at(&position).unwrap() =
-                            Pixel::new(CELL).with_fg(style.fg).with_bg(style.bg);
+                            Pixel::new(PIXEL).with_fg(style.fg).with_bg(style.bg);
                     }
                 }
             }
