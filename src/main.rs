@@ -2,22 +2,22 @@
 extern crate impl_ops;
 extern crate num_traits;
 
-use std::{cell::RefCell, io::stdout, iter::repeat_with, thread::sleep, time::Duration};
+use std::{cell::RefCell, io::stdout, iter::repeat_with, time::Duration};
 
 use anyhow::{Context, Result};
+use event::Event;
+use game_loop::{GameLoop, GameLoopSignal, GameScene};
 use point::{AbsPoint, Point};
 use rand::{prelude::ThreadRng, Rng};
 
 use crossterm::{event, style::Color, terminal};
 use renderer::{DrawInstruction, Renderer, Style};
-use timestep::Timestep;
 
+mod game_loop;
 mod point;
 mod renderer;
 mod timestep;
 
-// 1 update every 33 ms = 30 FPS
-const MS_PER_UPDATE: Duration = Duration::from_millis(16);
 const ACC: f32 = 15.0;
 const GAME_OVER: &'static str = "Game over";
 
@@ -244,23 +244,77 @@ impl Entity for Board {
     }
 }
 
-#[derive(Debug, Default)]
-struct GameInput {
-    up: bool,
-    down: bool,
-    left: bool,
-    right: bool,
-    quit: bool,
-    pause: bool,
-    select: bool,
+struct SnakeScene {
+    board: Board,
+    snake: Snake,
+    food: Food,
+    score: Score,
+    game_over_text: Text,
+    game_over: bool,
 }
 
-fn process_input() -> Result<GameInput> {
-    let mut input = GameInput::default();
+impl SnakeScene {
+    pub fn new(rows: usize, columns: usize) -> Self {
+        let board = Board::new(rows, columns);
+        let food = Food::new(board.get_random_position());
+        let game_over_text = Text {
+            value: "".into(),
+            position: board.get_center_position() - Point::new((GAME_OVER.len() / 2) as f32, 0.0),
+        };
 
-    if event::poll(Duration::from_millis(0))? {
-        let event = event::read()?;
+        Self {
+            board,
+            food,
+            game_over_text,
+            game_over: false,
+            score: Score::new(Point::new(0.0, 0.0)),
+            snake: Snake::new(Point::new(4.0, 2.0), 6),
+        }
+    }
+}
 
+impl GameScene for SnakeScene {
+    fn draw<'a>(&'a mut self) -> Vec<DrawInstruction<'a>> {
+        vec![
+            self.score.draw(),
+            self.game_over_text.draw(),
+            self.food.draw(),
+            self.snake.draw(),
+            self.board.draw(),
+        ]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+    }
+
+    fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
+        self.snake.update(elapsed);
+
+        if self.board.detect_collision(&self.snake.head()) {
+            self.game_over = true;
+            self.game_over_text.value = GAME_OVER.into();
+
+            return Ok(GameLoopSignal::Pause);
+        }
+
+        if self.snake.self_collision() {
+            self.game_over = true;
+            self.game_over_text.value = GAME_OVER.into();
+
+            return Ok(GameLoopSignal::Pause);
+        }
+
+        if self.snake.detect_collision(&self.food.position) {
+            self.snake.grow(2);
+            self.food = Food::new(self.board.get_random_position());
+            self.score.increment();
+        }
+
+        Ok(GameLoopSignal::Run)
+    }
+
+    fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal> {
+        let mut input = GameInput::default();
         match event {
             event::Event::Key(e) => match e.code {
                 event::KeyCode::Char('a') => input.left = true,
@@ -274,95 +328,42 @@ fn process_input() -> Result<GameInput> {
             },
             event::Event::Mouse(_) => {}
             event::Event::Resize(_, _) => {}
-        }
-    }
-
-    Ok(input)
-}
-
-fn game_loop() -> Result<()> {
-    let (width, height) =
-        terminal::size().with_context(|| format!("Failed to get terminal size"))?;
-
-    let width = (width - 1) as usize;
-    let height = (height - 1) as usize;
-    let mut renderer = Renderer::new(stdout(), height, width);
-
-    let mut timestep = Timestep::new();
-    let mut delta = Duration::from_millis(0);
-    let mut game_over = false;
-
-    let board = Board::new(height, width);
-
-    let mut score = Score::new(Point::new(0.0, 0.0));
-
-    let mut game_over_text = Text {
-        value: "".into(),
-        position: board.get_center_position() - Point::new((GAME_OVER.len() / 2) as f32, 0.0),
-    };
-
-    let mut food = Food::new(board.get_random_position());
-
-    let mut snake = Snake::new(Point::new(4.0, 2.0), 6);
-
-    renderer.start()?;
-
-    loop {
-        let input = process_input()?;
+        };
 
         if input.quit {
-            break;
+            return Ok(GameLoopSignal::Stop);
         }
 
-        delta += timestep.delta();
-        while delta >= MS_PER_UPDATE {
-            delta -= MS_PER_UPDATE;
-            if game_over {
-                continue;
-            }
-
-            snake.process_input(&input);
-            snake.update(&MS_PER_UPDATE);
-
-            if board.detect_collision(&snake.head()) {
-                game_over = true;
-                game_over_text.value = GAME_OVER.into();
-            }
-
-            if snake.detect_collision(&food.position) {
-                snake.grow(2);
-                food = Food::new(board.get_random_position());
-                score.increment();
-            }
-
-            if snake.self_collision() {
-                game_over = true;
-                game_over_text.value = GAME_OVER.into();
-            }
+        if self.game_over {
+            return Ok(GameLoopSignal::Pause);
         }
 
-        let instructions = &mut vec![
-            score.draw(),
-            game_over_text.draw(),
-            food.draw(),
-            snake.draw(),
-            board.draw(),
-        ]
-        .into_iter()
-        .flatten()
-        .collect::<Vec<_>>();
+        self.snake.process_input(&input);
 
-        renderer.draw(instructions)?;
-
-        let frame_time = timestep.elapsed_time();
-        if frame_time < MS_PER_UPDATE {
-            sleep(MS_PER_UPDATE - frame_time);
-        }
+        Ok(GameLoopSignal::Run)
     }
+}
 
-    Ok(())
+#[derive(Debug, Default)]
+struct GameInput {
+    up: bool,
+    down: bool,
+    left: bool,
+    right: bool,
+    quit: bool,
+    pause: bool,
+    select: bool,
 }
 
 fn main() -> Result<()> {
-    game_loop()
+    let (columns, rows) =
+        terminal::size().with_context(|| format!("Failed to get terminal size"))?;
+    let columns = (columns - 1) as usize;
+    let rows = (rows - 1) as usize;
+
+    let renderer = Renderer::new(stdout(), rows, columns);
+    let mut game = GameLoop::new(renderer, 15);
+    game.load_scene(Box::new(SnakeScene::new(rows, columns)));
+
+    game.run()
 }

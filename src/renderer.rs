@@ -1,9 +1,10 @@
 use std::{io::Write, iter::repeat_with};
 
+use anyhow::{Context, Result};
 use crossterm::{
     cursor,
     style::{self, Color},
-    terminal, ExecutableCommand, QueueableCommand, Result,
+    terminal, QueueableCommand,
 };
 
 use crate::point::{AbsPoint, Point};
@@ -159,6 +160,7 @@ pub struct Renderer<W: Write> {
     columns: usize,
     writer: W,
     buffer: ScreenBuffer,
+    running: bool,
 }
 
 impl<W: Write> Renderer<W> {
@@ -170,17 +172,36 @@ impl<W: Write> Renderer<W> {
             columns,
             writer,
             buffer,
+            running: false,
         }
     }
 
     pub fn start(&mut self) -> Result<()> {
+        if self.running {
+            return Ok(());
+        }
+
+        self.running = true;
         terminal::enable_raw_mode()?;
         self.writer
             .queue(terminal::EnterAlternateScreen)?
             .queue(cursor::Hide)?
-            .flush()?;
+            .flush()
+            .with_context(|| "Failed to prepare terminal for game")
+    }
 
-        Ok(())
+    pub fn stop(&mut self) -> Result<()> {
+        if !self.running {
+            return Ok(());
+        }
+
+        self.running = false;
+        terminal::disable_raw_mode()?;
+        self.writer
+            .queue(terminal::LeaveAlternateScreen)?
+            .queue(cursor::Show)?
+            .flush()
+            .with_context(|| "Failed to restore terminal to original state")
     }
 
     pub fn draw(&mut self, draw_instructions: &[DrawInstruction]) -> Result<()> {
@@ -210,11 +231,6 @@ impl<W: Write> Renderer<W> {
 
 impl<W: Write> Drop for Renderer<W> {
     fn drop(&mut self) {
-        terminal::disable_raw_mode().unwrap();
-        self.writer
-            .execute(terminal::LeaveAlternateScreen)
-            .unwrap()
-            .execute(cursor::Show)
-            .unwrap();
+        self.stop().unwrap();
     }
 }
