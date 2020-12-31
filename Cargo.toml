@@ -9,3 +9,7 @@ edition = "2018"
 [dependencies]
 "crossterm" = "0.18.2"
 "rand" = "0.8.0"
+"impl_ops" = "0.1.1"
+"num-traits" = "0.2"
+"anyhow" = "1.0.37"
+"itertools" = "0.10.0"
