@@ -11,7 +11,7 @@ use crate::{
         traits::{Entity, GameScene},
     },
     entities::{board::Board, food::Food, score::Score, snake::Snake, text::Text},
-    SnakeInput,
+    PlayerInput,
 };
 
 const GAME_OVER: &'static str = "Game over";
@@ -88,11 +88,11 @@ impl GameScene for SnakeScene {
     fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal> {
         let input = match event {
             Event::Key(e) => match e.code {
-                KeyCode::Char('a') => SnakeInput::Left,
-                KeyCode::Char('s') => SnakeInput::Down,
-                KeyCode::Char('d') => SnakeInput::Right,
-                KeyCode::Char('w') => SnakeInput::Up,
-                KeyCode::Char('p') => SnakeInput::Pause,
+                KeyCode::Char('a') => PlayerInput::Left,
+                KeyCode::Char('s') => PlayerInput::Down,
+                KeyCode::Char('d') => PlayerInput::Right,
+                KeyCode::Char('w') => PlayerInput::Up,
+                KeyCode::Char('p') => PlayerInput::Pause,
                 KeyCode::Char('q') => return Ok(GameLoopSignal::Stop),
                 _ => return Ok(GameLoopSignal::Run),
             },

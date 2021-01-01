@@ -4,7 +4,7 @@ use crate::{
         renderer::{DrawInstruction, Style},
         traits::Entity,
     },
-    SnakeInput,
+    PlayerInput,
 };
 
 pub struct Score {
@@ -29,7 +29,7 @@ impl Score {
 }
 
 impl Entity for Score {
-    type Input = SnakeInput;
+    type Input = PlayerInput;
 
     fn draw(&self) -> Vec<DrawInstruction> {
         vec![DrawInstruction::Text {

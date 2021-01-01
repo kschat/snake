@@ -6,7 +6,7 @@ use crate::{
         renderer::{DrawInstruction, Style},
         traits::Entity,
     },
-    SnakeInput,
+    PlayerInput,
 };
 
 pub struct Food {
@@ -26,7 +26,7 @@ impl Food {
 }
 
 impl Entity for Food {
-    type Input = SnakeInput;
+    type Input = PlayerInput;
 
     fn draw(&self) -> Vec<DrawInstruction> {
         vec![DrawInstruction::Square {

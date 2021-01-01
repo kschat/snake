@@ -7,7 +7,7 @@ use crate::{
         renderer::{DrawInstruction, Style},
         traits::Entity,
     },
-    SnakeInput,
+    PlayerInput,
 };
 
 const ACCELERATION: f32 = 15.0;
@@ -56,7 +56,7 @@ impl Snake {
 }
 
 impl Entity for Snake {
-    type Input = SnakeInput;
+    type Input = PlayerInput;
 
     fn draw(&self) -> Vec<DrawInstruction> {
         self.body
@@ -101,10 +101,10 @@ impl Entity for Snake {
 
     fn process_input(&mut self, input: &Self::Input) {
         self.velocity = match input {
-            SnakeInput::Up if self.velocity.y == 0.0 => Point::new(0.0, -1.0),
-            SnakeInput::Down if self.velocity.y == 0.0 => Point::new(0.0, 1.0),
-            SnakeInput::Right if self.velocity.x == 0.0 => Point::new(1.0, 0.0),
-            SnakeInput::Left if self.velocity.x == 0.0 => Point::new(-1.0, 0.0),
+            PlayerInput::Up if self.velocity.y == 0.0 => Point::new(0.0, -1.0),
+            PlayerInput::Down if self.velocity.y == 0.0 => Point::new(0.0, 1.0),
+            PlayerInput::Right if self.velocity.x == 0.0 => Point::new(1.0, 0.0),
+            PlayerInput::Left if self.velocity.x == 0.0 => Point::new(-1.0, 0.0),
             _ => self.velocity,
         };
 

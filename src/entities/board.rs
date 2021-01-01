@@ -7,7 +7,7 @@ use crate::{
         renderer::DrawInstruction,
         traits::Entity,
     },
-    SnakeInput,
+    PlayerInput,
 };
 
 pub struct Board {
@@ -47,7 +47,7 @@ impl Board {
 }
 
 impl Entity for Board {
-    type Input = SnakeInput;
+    type Input = PlayerInput;
 
     fn draw(&self) -> Vec<DrawInstruction> {
         vec![]

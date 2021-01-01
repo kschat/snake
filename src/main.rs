@@ -14,7 +14,8 @@ use engine::{
 };
 use snake_scene::SnakeScene;
 use std::{io::stdout, time::Duration};
-pub enum SnakeInput {
+
+pub enum PlayerInput {
     Up,
     Down,
     Left,
