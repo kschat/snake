@@ -1,16 +1,17 @@
 use anyhow::Result;
-use crossterm::event;
+use crossterm::event::{self, KeyCode};
 use event::Event;
 use std::time::Duration;
 
 use crate::{
     engine::{
-        entity::{Entity, GameInput},
+        entity::Entity,
         game_loop::{GameLoopSignal, GameScene},
         point::Point,
         renderer::DrawInstruction,
     },
     entities::{board::Board, food::Food, score::Score, snake::Snake, text::Text},
+    SnakeInput,
 };
 
 const GAME_OVER: &'static str = "Game over";
@@ -85,25 +86,18 @@ impl GameScene for SnakeScene {
     }
 
     fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal> {
-        let mut input = GameInput::default();
-        match event {
-            event::Event::Key(e) => match e.code {
-                event::KeyCode::Char('a') => input.left = true,
-                event::KeyCode::Char('s') => input.down = true,
-                event::KeyCode::Char('d') => input.right = true,
-                event::KeyCode::Char('w') => input.up = true,
-                event::KeyCode::Char('q') => input.quit = true,
-                event::KeyCode::Char('p') => input.pause = true,
-                event::KeyCode::Enter => input.select = true,
-                _ => (),
+        let input = match event {
+            Event::Key(e) => match e.code {
+                KeyCode::Char('a') => SnakeInput::Left,
+                KeyCode::Char('s') => SnakeInput::Down,
+                KeyCode::Char('d') => SnakeInput::Right,
+                KeyCode::Char('w') => SnakeInput::Up,
+                KeyCode::Char('p') => SnakeInput::Pause,
+                KeyCode::Char('q') => return Ok(GameLoopSignal::Stop),
+                _ => return Ok(GameLoopSignal::Run),
             },
-            event::Event::Mouse(_) => {}
-            event::Event::Resize(_, _) => {}
+            Event::Mouse(_) | Event::Resize(_, _) => return Ok(GameLoopSignal::Run),
         };
-
-        if input.quit {
-            return Ok(GameLoopSignal::Stop);
-        }
 
         if self.game_over {
             return Ok(GameLoopSignal::Pause);

@@ -1,12 +1,16 @@
-use std::{io::Write, thread::sleep, time::Duration};
-
 use anyhow::{anyhow, Result};
 use crossterm::event::{self, Event};
+use std::{io::Write, thread::sleep, time::Duration};
 
 use super::{
     renderer::{DrawInstruction, Renderer},
     timestep::Timestep,
 };
+
+pub struct GameLoopConfig {
+    pub frame_rate: u8,
+    pub input_poll_rate: Duration,
+}
 
 pub enum GameLoopSignal {
     Run,
@@ -21,16 +25,20 @@ pub trait GameScene {
 }
 
 pub struct GameLoop<W: Write> {
+    config: GameLoopConfig,
     renderer: Renderer<W>,
     ms_per_update: Duration,
     scenes: Vec<Box<dyn GameScene>>,
 }
 
 impl<W: Write> GameLoop<W> {
-    pub fn new(renderer: Renderer<W>, frame_rate: u8) -> Self {
+    pub fn new(renderer: Renderer<W>, config: GameLoopConfig) -> Self {
+        let ms_per_update = Duration::from_millis((1_000.0 / (config.frame_rate as f32)) as u64);
+
         Self {
+            config,
             renderer,
-            ms_per_update: Duration::from_millis((1_000.0 / (frame_rate as f32)) as u64),
+            ms_per_update,
             scenes: vec![],
         }
     }
@@ -40,15 +48,15 @@ impl<W: Write> GameLoop<W> {
     }
 
     pub fn run(&mut self) -> Result<()> {
+        let scene = self.scenes.get_mut(0).ok_or(anyhow!("No scene loaded"))?;
         let mut timestep = Timestep::new();
         let mut lag = Duration::from_millis(0);
         let mut state = GameLoopSignal::Run;
-        let scene = self.scenes.get_mut(0).ok_or(anyhow!("No scene loaded"))?;
 
         self.renderer.start()?;
 
         'game_loop: loop {
-            if event::poll(Duration::from_millis(0))? {
+            if event::poll(self.config.input_poll_rate)? {
                 state = scene.process_input(&event::read()?)?;
             }
 

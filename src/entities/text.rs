@@ -1,7 +1,10 @@
-use crate::engine::{
-    entity::Entity,
-    point::Point,
-    renderer::{DrawInstruction, Style},
+use crate::{
+    engine::{
+        entity::Entity,
+        point::Point,
+        renderer::{DrawInstruction, Style},
+    },
+    SnakeInput,
 };
 
 pub struct Text {
@@ -10,6 +13,8 @@ pub struct Text {
 }
 
 impl Entity for Text {
+    type Input = SnakeInput;
+
     fn draw(&self) -> Vec<DrawInstruction> {
         vec![DrawInstruction::Text {
             content: &self.value,

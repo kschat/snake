@@ -1,10 +1,13 @@
 use rand::prelude::*;
 use std::cell::RefCell;
 
-use crate::engine::{
-    entity::Entity,
-    point::{AbsPoint, Point},
-    renderer::DrawInstruction,
+use crate::{
+    engine::{
+        entity::Entity,
+        point::{AbsPoint, Point},
+        renderer::DrawInstruction,
+    },
+    SnakeInput,
 };
 
 pub struct Board {
@@ -44,6 +47,8 @@ impl Board {
 }
 
 impl Entity for Board {
+    type Input = SnakeInput;
+
     fn draw(&self) -> Vec<DrawInstruction> {
         vec![]
     }

@@ -1,10 +1,13 @@
 use crossterm::style::Color;
 use std::{iter::repeat_with, time::Duration};
 
-use crate::engine::{
-    entity::{Entity, GameInput},
-    point::{AbsPoint, Point},
-    renderer::{DrawInstruction, Style},
+use crate::{
+    engine::{
+        entity::Entity,
+        point::{AbsPoint, Point},
+        renderer::{DrawInstruction, Style},
+    },
+    SnakeInput,
 };
 
 const ACCELERATION: f32 = 15.0;
@@ -53,6 +56,8 @@ impl Snake {
 }
 
 impl Entity for Snake {
+    type Input = SnakeInput;
+
     fn draw(&self) -> Vec<DrawInstruction> {
         self.body
             .iter()
@@ -94,21 +99,29 @@ impl Entity for Snake {
         self.body[0] = transform + head + velocity;
     }
 
-    fn process_input(&mut self, input: &GameInput) {
-        if input.up && self.velocity.y == 0.0 {
-            self.velocity = Point::new(0.0, -1.0);
-        }
+    fn process_input(&mut self, input: &Self::Input) {
+        self.velocity = match input {
+            SnakeInput::Up if self.velocity.y == 0.0 => Point::new(0.0, -1.0),
+            SnakeInput::Down if self.velocity.y == 0.0 => Point::new(0.0, 1.0),
+            SnakeInput::Right if self.velocity.x == 0.0 => Point::new(1.0, 0.0),
+            SnakeInput::Left if self.velocity.x == 0.0 => Point::new(-1.0, 0.0),
+            _ => self.velocity,
+        };
 
-        if input.down && self.velocity.y == 0.0 {
-            self.velocity = Point::new(0.0, 1.0);
-        }
+        // if input.up && self.velocity.y == 0.0 {
+        //     self.velocity = Point::new(0.0, -1.0);
+        // }
 
-        if input.right && self.velocity.x == 0.0 {
-            self.velocity = Point::new(1.0, 0.0);
-        }
+        // if input.down && self.velocity.y == 0.0 {
+        //     self.velocity = Point::new(0.0, 1.0);
+        // }
 
-        if input.left && self.velocity.x == 0.0 {
-            self.velocity = Point::new(-1.0, 0.0);
-        }
+        // if input.right && self.velocity.x == 0.0 {
+        //     self.velocity = Point::new(1.0, 0.0);
+        // }
+
+        // if input.left && self.velocity.x == 0.0 {
+        //     self.velocity = Point::new(-1.0, 0.0);
+        // }
     }
 }

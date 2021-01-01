@@ -1,9 +1,12 @@
 use crossterm::style::Color;
 
-use crate::engine::{
-    entity::Entity,
-    point::Point,
-    renderer::{DrawInstruction, Style},
+use crate::{
+    engine::{
+        entity::Entity,
+        point::Point,
+        renderer::{DrawInstruction, Style},
+    },
+    SnakeInput,
 };
 
 pub struct Food {
@@ -23,6 +26,8 @@ impl Food {
 }
 
 impl Entity for Food {
+    type Input = SnakeInput;
+
     fn draw(&self) -> Vec<DrawInstruction> {
         vec![DrawInstruction::Square {
             size: 1,
