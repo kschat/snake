@@ -5,10 +5,10 @@ use std::time::Duration;
 
 use crate::{
     engine::{
-        entity::Entity,
-        game_loop::{GameLoopSignal, GameScene},
+        game_loop::GameLoopSignal,
         point::Point,
         renderer::DrawInstruction,
+        traits::{Entity, GameScene},
     },
     entities::{board::Board, food::Food, score::Score, snake::Snake, text::Text},
     SnakeInput,

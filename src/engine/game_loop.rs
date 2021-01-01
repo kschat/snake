@@ -1,11 +1,8 @@
 use anyhow::{anyhow, Result};
-use crossterm::event::{self, Event};
+use crossterm::event;
 use std::{io::Write, thread::sleep, time::Duration};
 
-use super::{
-    renderer::{DrawInstruction, Renderer},
-    timestep::Timestep,
-};
+use super::{renderer::Renderer, timestep::Timestep, traits::GameScene};
 
 pub struct GameLoopConfig {
     pub frame_rate: u8,
@@ -16,12 +13,6 @@ pub enum GameLoopSignal {
     Run,
     Stop,
     Pause,
-}
-
-pub trait GameScene {
-    fn draw<'a>(&'a mut self) -> Vec<DrawInstruction<'a>>;
-    fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal>;
-    fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal>;
 }
 
 pub struct GameLoop<W: Write> {

@@ -3,9 +3,9 @@ use std::{iter::repeat_with, time::Duration};
 
 use crate::{
     engine::{
-        entity::Entity,
         point::{AbsPoint, Point},
         renderer::{DrawInstruction, Style},
+        traits::Entity,
     },
     SnakeInput,
 };

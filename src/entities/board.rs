@@ -3,9 +3,9 @@ use std::cell::RefCell;
 
 use crate::{
     engine::{
-        entity::Entity,
         point::{AbsPoint, Point},
         renderer::DrawInstruction,
+        traits::Entity,
     },
     SnakeInput,
 };

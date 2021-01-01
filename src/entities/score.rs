@@ -1,8 +1,8 @@
 use crate::{
     engine::{
-        entity::Entity,
         point::Point,
         renderer::{DrawInstruction, Style},
+        traits::Entity,
     },
     SnakeInput,
 };
