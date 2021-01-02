@@ -10,16 +10,16 @@ use crate::{
     PlayerInput,
 };
 
-const ACCELERATION: f32 = 15.0;
-
 pub struct Snake {
     body: Vec<Point>,
     size: usize,
     velocity: Point,
+    speed: f32,
+    movement_progress: f32,
 }
 
 impl Snake {
-    pub fn new(head: Point, size: usize) -> Self {
+    pub fn new(head: Point, size: usize, speed: f32) -> Self {
         let body = repeat_with(|| head)
             .enumerate()
             .map(|(index, point)| point + Point::new(((size - index) * 2) as f32, 0.0))
@@ -29,7 +29,9 @@ impl Snake {
         Self {
             body,
             size,
-            velocity: Point::new(1.0, 0.0),
+            velocity: Point::new(2.0, 0.0),
+            speed,
+            movement_progress: 0.0,
         }
     }
 
@@ -38,8 +40,7 @@ impl Snake {
     }
 
     pub fn detect_collision(&self, point: &Point) -> bool {
-        let head = AbsPoint::from(self.body[0]);
-        head == AbsPoint::from(*point)
+        AbsPoint::from(*self.head()) == AbsPoint::from(*point)
     }
 
     pub fn self_collision(&self) -> bool {
@@ -66,62 +67,38 @@ impl Entity for Snake {
                 position,
                 style: Style {
                     fg: Color::Green,
-                    ..Style::default()
+                    ..Default::default()
                 },
             })
             .collect()
     }
 
     fn update(&mut self, elapsed: &Duration) {
-        let elapsed_secs = elapsed.as_secs_f32();
-        let velocity = self.velocity * (ACCELERATION * elapsed_secs);
+        self.movement_progress += self.speed * elapsed.as_secs_f32();
+        while self.movement_progress > 1.0 {
+            self.movement_progress -= 1.0;
 
-        let head = self.body[0];
-        let new_head = AbsPoint::from(head + velocity);
-        let abs_head = AbsPoint::from(head);
+            let head = *self.head();
 
-        if abs_head.x != new_head.x || abs_head.y != new_head.y {
             if self.size != self.body.len() {
                 self.body.insert(0, head);
             } else {
                 self.body.rotate_right(1);
             }
+
+            self.body[0] = head + self.velocity;
         }
-
-        // "squares" are 2x1 since fonts are taller than they are wide so we need a transform
-        // if we're moving east or west so we move 2 "pixels" at a time
-        let transform = match (abs_head.x < new_head.x, abs_head.x > new_head.x) {
-            (true, _) => Point::new(1.0, 0.0),
-            (_, true) => Point::new(-1.0, 0.0),
-            (_, _) => Point::new(0.0, 0.0),
-        };
-
-        self.body[0] = transform + head + velocity;
     }
 
     fn process_input(&mut self, input: &Self::Input) {
+        // "squares" are 2x1 since fonts are taller than they are wide so we need to
+        // move double the distance when going east or west
         self.velocity = match input {
             PlayerInput::Up if self.velocity.y == 0.0 => Point::new(0.0, -1.0),
             PlayerInput::Down if self.velocity.y == 0.0 => Point::new(0.0, 1.0),
-            PlayerInput::Right if self.velocity.x == 0.0 => Point::new(1.0, 0.0),
-            PlayerInput::Left if self.velocity.x == 0.0 => Point::new(-1.0, 0.0),
+            PlayerInput::Right if self.velocity.x == 0.0 => Point::new(2.0, 0.0),
+            PlayerInput::Left if self.velocity.x == 0.0 => Point::new(-2.0, 0.0),
             _ => self.velocity,
         };
-
-        // if input.up && self.velocity.y == 0.0 {
-        //     self.velocity = Point::new(0.0, -1.0);
-        // }
-
-        // if input.down && self.velocity.y == 0.0 {
-        //     self.velocity = Point::new(0.0, 1.0);
-        // }
-
-        // if input.right && self.velocity.x == 0.0 {
-        //     self.velocity = Point::new(1.0, 0.0);
-        // }
-
-        // if input.left && self.velocity.x == 0.0 {
-        //     self.velocity = Point::new(-1.0, 0.0);
-        // }
     }
 }

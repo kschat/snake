@@ -16,7 +16,15 @@ use crate::{
 
 const GAME_OVER: &'static str = "Game over";
 
+pub struct SnakeConfig {
+    pub rows: usize,
+    pub columns: usize,
+    pub speed: f32,
+    pub grow_rate: usize,
+}
+
 pub struct SnakeScene {
+    config: SnakeConfig,
     board: Board,
     snake: Snake,
     food: Food,
@@ -26,21 +34,24 @@ pub struct SnakeScene {
 }
 
 impl SnakeScene {
-    pub fn new(rows: usize, columns: usize) -> Self {
-        let board = Board::new(rows, columns);
+    pub fn new(config: SnakeConfig) -> Self {
+        let board = Board::new(config.rows, config.columns);
         let food = Food::new(board.get_random_position());
         let game_over_text = Text {
             value: "".into(),
             position: board.get_center_position() - Point::new((GAME_OVER.len() / 2) as f32, 0.0),
         };
 
+        let snake = Snake::new(Point::new(4.0, 2.0), 6, config.speed);
+
         Self {
+            config,
             board,
             food,
             game_over_text,
             game_over: false,
             score: Score::new(Point::new(0.0, 0.0)),
-            snake: Snake::new(Point::new(4.0, 2.0), 6),
+            snake,
         }
     }
 }
@@ -77,7 +88,7 @@ impl GameScene for SnakeScene {
         }
 
         if self.snake.detect_collision(self.food.get_position()) {
-            self.snake.grow(2);
+            self.snake.grow(self.config.grow_rate);
             self.food = Food::new(self.board.get_random_position());
             self.score.increment();
         }
