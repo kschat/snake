@@ -93,10 +93,10 @@ impl GameScene for SnakeScene {
     fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal> {
         let input = match event {
             Event::Key(e) => match e.code {
-                KeyCode::Char('a') => PlayerInput::Left,
-                KeyCode::Char('s') => PlayerInput::Down,
-                KeyCode::Char('d') => PlayerInput::Right,
-                KeyCode::Char('w') => PlayerInput::Up,
+                KeyCode::Char('a') | KeyCode::Left => PlayerInput::Left,
+                KeyCode::Char('s') | KeyCode::Down => PlayerInput::Down,
+                KeyCode::Char('d') | KeyCode::Right => PlayerInput::Right,
+                KeyCode::Char('w') | KeyCode::Up => PlayerInput::Up,
                 KeyCode::Char('p') => PlayerInput::Pause,
                 KeyCode::Char('q') => return Ok(GameLoopSignal::Stop),
                 _ => return Ok(GameLoopSignal::Run),
