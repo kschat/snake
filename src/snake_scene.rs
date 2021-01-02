@@ -38,8 +38,9 @@ impl SnakeScene {
         let world = World::new(config.rows, config.columns);
         let food = Food::new(world.get_random_position());
         let game_over_text = Text {
-            value: "".into(),
+            value: GAME_OVER.into(),
             position: world.get_center_position() - Point::new((GAME_OVER.len() / 2) as f32, 0.0),
+            visible: false,
         };
 
         let snake = Snake::new(Point::new(4.0, 2.0), 6, config.speed);
@@ -73,16 +74,9 @@ impl GameScene for SnakeScene {
     fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
         self.snake.update(elapsed);
 
-        if self.world.detect_collision(&self.snake.head()) {
+        if self.world.detect_collision(&self.snake.head()) || self.snake.self_collision() {
             self.game_over = true;
-            self.game_over_text.value = GAME_OVER.into();
-
-            return Ok(GameLoopSignal::Pause);
-        }
-
-        if self.snake.self_collision() {
-            self.game_over = true;
-            self.game_over_text.value = GAME_OVER.into();
+            self.game_over_text.visible = true;
 
             return Ok(GameLoopSignal::Pause);
         }
