@@ -26,7 +26,7 @@ impl Board {
     }
 
     pub fn detect_collision(&self, point: &Point) -> bool {
-        let point = AbsPoint::from(*point);
+        let point = AbsPoint::from(point);
         point.x <= 0
             || (point.x + 2) >= self.columns - 1
             || point.y <= 0

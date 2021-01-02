@@ -40,7 +40,7 @@ impl Snake {
     }
 
     pub fn detect_collision(&self, point: &Point) -> bool {
-        AbsPoint::from(*self.head()) == AbsPoint::from(*point)
+        AbsPoint::from(self.head()) == AbsPoint::from(point)
     }
 
     pub fn self_collision(&self) -> bool {

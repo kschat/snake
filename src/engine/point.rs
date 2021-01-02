@@ -40,6 +40,15 @@ impl From<Point<f32>> for AbsPoint {
     }
 }
 
+impl From<&Point<f32>> for AbsPoint {
+    fn from(point: &Point<f32>) -> Self {
+        Self {
+            x: point.x.floor() as usize,
+            y: point.y.floor() as usize,
+        }
+    }
+}
+
 impl_op_ex!(+|a: &Point<f32>, b: &Point<f32>| -> Point<f32> {
     Point {
         x: a.x + b.x,

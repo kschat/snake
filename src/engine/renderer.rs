@@ -131,7 +131,7 @@ impl<'a> DrawInstruction<'a> {
 
                 for row in 0..height {
                     for column in 0..width {
-                        let position = AbsPoint::from(*position) + Point::new(column, row);
+                        let position = AbsPoint::from(position) + Point::new(column, row);
                         *buffer.get_mut_at(&position).unwrap() =
                             Pixel::new(PIXEL).with_fg(style.fg).with_bg(style.bg);
                     }
@@ -144,7 +144,7 @@ impl<'a> DrawInstruction<'a> {
                 style,
             } => {
                 content.chars().enumerate().for_each(|(i, c)| {
-                    let position = AbsPoint::from(*position) + Point::new(i, 0);
+                    let position = AbsPoint::from(position) + Point::new(i, 0);
                     *buffer.get_mut_at(&position).unwrap() = Pixel::new(&c.to_string())
                         .with_fg(style.fg)
                         .with_bg(style.bg);
