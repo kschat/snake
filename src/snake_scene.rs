@@ -10,7 +10,7 @@ use crate::{
         renderer::DrawInstruction,
         traits::{Entity, GameScene},
     },
-    entities::{board::Board, food::Food, score::Score, snake::Snake, text::Text},
+    entities::{food::Food, score::Score, snake::Snake, text::Text, world::World},
     PlayerInput,
 };
 
@@ -25,7 +25,7 @@ pub struct SnakeConfig {
 
 pub struct SnakeScene {
     config: SnakeConfig,
-    board: Board,
+    world: World,
     snake: Snake,
     food: Food,
     score: Score,
@@ -35,18 +35,18 @@ pub struct SnakeScene {
 
 impl SnakeScene {
     pub fn new(config: SnakeConfig) -> Self {
-        let board = Board::new(config.rows, config.columns);
-        let food = Food::new(board.get_random_position());
+        let world = World::new(config.rows, config.columns);
+        let food = Food::new(world.get_random_position());
         let game_over_text = Text {
             value: "".into(),
-            position: board.get_center_position() - Point::new((GAME_OVER.len() / 2) as f32, 0.0),
+            position: world.get_center_position() - Point::new((GAME_OVER.len() / 2) as f32, 0.0),
         };
 
         let snake = Snake::new(Point::new(4.0, 2.0), 6, config.speed);
 
         Self {
             config,
-            board,
+            world,
             food,
             game_over_text,
             game_over: false,
@@ -63,7 +63,7 @@ impl GameScene for SnakeScene {
             self.game_over_text.draw(),
             self.food.draw(),
             self.snake.draw(),
-            self.board.draw(),
+            self.world.draw(),
         ]
         .into_iter()
         .flatten()
@@ -73,7 +73,7 @@ impl GameScene for SnakeScene {
     fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
         self.snake.update(elapsed);
 
-        if self.board.detect_collision(&self.snake.head()) {
+        if self.world.detect_collision(&self.snake.head()) {
             self.game_over = true;
             self.game_over_text.value = GAME_OVER.into();
 
@@ -89,7 +89,7 @@ impl GameScene for SnakeScene {
 
         if self.snake.detect_collision(self.food.get_position()) {
             self.snake.grow(self.config.grow_rate);
-            self.food = Food::new(self.board.get_random_position());
+            self.food = Food::new(self.world.get_random_position());
             self.score.increment();
         }
 

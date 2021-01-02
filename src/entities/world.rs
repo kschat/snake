@@ -10,13 +10,13 @@ use crate::{
     PlayerInput,
 };
 
-pub struct Board {
+pub struct World {
     rows: usize,
     columns: usize,
     rng: RefCell<ThreadRng>,
 }
 
-impl Board {
+impl World {
     pub fn new(rows: usize, columns: usize) -> Self {
         Self {
             rows,
@@ -46,7 +46,7 @@ impl Board {
     }
 }
 
-impl Entity for Board {
+impl Entity for World {
     type Input = PlayerInput;
 
     fn draw(&self) -> Vec<DrawInstruction> {
