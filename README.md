@@ -10,7 +10,7 @@ A reimplementation of the game Snake for terminal emulators.
 
 Pre-compiled binaries can be found [here](https://github.com/kschat/snake/releases).
 
-## Building
+# Build
 
 To build from source you'll need to [install Rust](https://www.rust-lang.org/). Once installed, run:
 
