@@ -2,10 +2,6 @@ mod engine;
 mod entities;
 mod snake_scene;
 
-#[macro_use]
-extern crate impl_ops;
-extern crate num_traits;
-
 use anyhow::{Context, Result};
 use crossterm::terminal;
 use engine::{
