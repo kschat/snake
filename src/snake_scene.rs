@@ -45,11 +45,11 @@ impl SnakeScene {
         let food = Food::new(world.get_random_position());
         let game_over_text = Text {
             value: GAME_OVER.into(),
-            position: world.get_center_position() - Point::new((GAME_OVER.len() / 2) as f32, 0.0),
+            position: world.get_center_position() - Point::new(GAME_OVER.len() / 2, 0),
             visible: false,
         };
 
-        let snake = Snake::new(Point::new(4.0, 2.0), 6, config.speed);
+        let snake = Snake::new(Point::new(4, 2), 6, config.speed);
 
         Self {
             config,
@@ -57,7 +57,7 @@ impl SnakeScene {
             food,
             game_over_text,
             state: SnakeSceneState::Playing,
-            score: Score::new(Point::new(0.0, 0.0)),
+            score: Score::new(Point::new(0, 0)),
             snake,
         }
     }

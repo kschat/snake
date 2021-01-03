@@ -3,7 +3,7 @@ use std::{iter::repeat_with, time::Duration};
 
 use crate::{
     engine::{
-        point::{AbsPoint, Point},
+        point::{Point, Vector},
         renderer::{DrawInstruction, Style},
         traits::Entity,
     },
@@ -13,7 +13,7 @@ use crate::{
 pub struct Snake {
     body: Vec<Point>,
     size: usize,
-    velocity: Point,
+    velocity: Vector,
     speed: f32,
     movement_progress: f32,
 }
@@ -22,14 +22,14 @@ impl Snake {
     pub fn new(head: Point, size: usize, speed: f32) -> Self {
         let body = repeat_with(|| head)
             .enumerate()
-            .map(|(index, point)| point + Point::new(((size - index) * 2) as f32, 0.0))
+            .map(|(index, point)| point + Point::new((size - index) * 2, 0))
             .take(size)
             .collect();
 
         Self {
             body,
             size,
-            velocity: Point::new(2.0, 0.0),
+            velocity: Point::new(2, 0),
             speed,
             movement_progress: 0.0,
         }
@@ -40,7 +40,7 @@ impl Snake {
     }
 
     pub fn detect_collision(&self, point: &Point) -> bool {
-        AbsPoint::from(self.head()) == AbsPoint::from(point)
+        self.head() == point
     }
 
     pub fn self_collision(&self) -> bool {
@@ -93,10 +93,10 @@ impl Entity for Snake {
         // "squares" are 2x1 since fonts are taller than they are wide so we need to
         // move double the distance when going east or west
         self.velocity = match input {
-            PlayerInput::Up if self.velocity.y == 0.0 => Point::new(0.0, -1.0),
-            PlayerInput::Down if self.velocity.y == 0.0 => Point::new(0.0, 1.0),
-            PlayerInput::Right if self.velocity.x == 0.0 => Point::new(2.0, 0.0),
-            PlayerInput::Left if self.velocity.x == 0.0 => Point::new(-2.0, 0.0),
+            PlayerInput::Up if self.velocity.y == 0 => Vector::new(0, -1),
+            PlayerInput::Down if self.velocity.y == 0 => Vector::new(0, 1),
+            PlayerInput::Right if self.velocity.x == 0 => Vector::new(2, 0),
+            PlayerInput::Left if self.velocity.x == 0 => Vector::new(-2, 0),
             _ => self.velocity,
         };
     }

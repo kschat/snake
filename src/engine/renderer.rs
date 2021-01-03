@@ -7,7 +7,7 @@ use crossterm::{
     terminal, QueueableCommand,
 };
 
-use super::point::{AbsPoint, Point};
+use super::point::Point;
 
 const PIXEL: &str = "█";
 
@@ -77,7 +77,7 @@ impl ScreenBuffer {
     }
 
     #[inline(always)]
-    fn calculate_index(columns: usize, rows: usize, position: &AbsPoint) -> usize {
+    fn calculate_index(columns: usize, rows: usize, position: &Point) -> usize {
         if position.x >= columns {
             panic!("Tried to index out of buffer bounds: x too large");
         }
@@ -93,12 +93,12 @@ impl ScreenBuffer {
         self.pixels = self.pixels.iter().map(|_| Pixel::default()).collect();
     }
 
-    pub fn get_at(&self, position: &AbsPoint) -> Option<&Pixel> {
+    pub fn get_at(&self, position: &Point) -> Option<&Pixel> {
         self.pixels
             .get(Self::calculate_index(self.columns, self.rows, position))
     }
 
-    pub fn get_mut_at(&mut self, position: &AbsPoint) -> Option<&mut Pixel> {
+    pub fn get_mut_at(&mut self, position: &Point) -> Option<&mut Pixel> {
         self.pixels
             .get_mut(Self::calculate_index(self.columns, self.rows, position))
     }
@@ -131,7 +131,7 @@ impl<'a> DrawInstruction<'a> {
 
                 for row in 0..height {
                     for column in 0..width {
-                        let position = AbsPoint::from(position) + Point::new(column, row);
+                        let position = position + Point::new(column, row);
                         *buffer.get_mut_at(&position).unwrap() =
                             Pixel::new(PIXEL).with_fg(style.fg).with_bg(style.bg);
                     }
@@ -144,7 +144,7 @@ impl<'a> DrawInstruction<'a> {
                 style,
             } => {
                 content.chars().enumerate().for_each(|(i, c)| {
-                    let position = AbsPoint::from(position) + Point::new(i, 0);
+                    let position = position + Point::new(i, 0);
                     *buffer.get_mut_at(&position).unwrap() = Pixel::new(&c.to_string())
                         .with_fg(style.fg)
                         .with_bg(style.bg);

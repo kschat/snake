@@ -4,7 +4,7 @@ use impl_ops::*;
 use num_traits::Num;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct Point<T = f32>
+pub struct Point<T = usize>
 where
     T: Num,
 {
@@ -28,58 +28,39 @@ where
     }
 }
 
-// usize for x and y feels wrong, but it's needed to index into the buffer
-pub type AbsPoint = Point<usize>;
+pub type Vector = Point<isize>;
 
-impl From<Point<f32>> for AbsPoint {
-    fn from(point: Point<f32>) -> Self {
-        Self {
-            x: point.x.floor() as usize,
-            y: point.y.floor() as usize,
-        }
-    }
-}
-
-impl From<&Point<f32>> for AbsPoint {
-    fn from(point: &Point<f32>) -> Self {
-        Self {
-            x: point.x.floor() as usize,
-            y: point.y.floor() as usize,
-        }
-    }
-}
-
-impl_op_ex!(+|a: &Point<f32>, b: &Point<f32>| -> Point<f32> {
+impl_op_ex!(+|a: &Point, b: &Point| -> Point {
     Point {
         x: a.x + b.x,
         y: a.y + b.y,
     }
 });
 
-impl_op_ex!(-|a: &Point<f32>, b: &Point<f32>| -> Point<f32> {
+impl_op_ex!(-|a: &Point, b: &Point| -> Point {
     Point {
         x: a.x - b.x,
         y: a.y - b.y,
     }
 });
 
-impl_op_ex!(*|a: &Point<f32>, b: &Point<f32>| -> Point<f32> {
+impl_op_ex!(*|a: &Point, b: &Point| -> Point {
     Point {
         x: a.x * b.x,
         y: a.y * b.y,
     }
 });
 
-impl_op_ex_commutative!(*|a: &Point<f32>, b: &f32| -> Point<f32> {
+impl_op_ex_commutative!(*|a: &Point, b: &usize| -> Point {
     Point {
         x: a.x * b,
         y: a.y * b,
     }
 });
 
-impl_op_ex!(+|a: &Point<usize>, b: &Point<usize>| -> Point<usize> {
+impl_op_ex!(+|a: &Point, b: &Vector| -> Point {
     Point {
-        x: a.x + b.x,
-        y: a.y + b.y,
+        x: (a.x as isize + b.x) as usize,
+        y: (a.y as isize + b.y) as usize,
     }
 });

@@ -2,11 +2,7 @@ use rand::prelude::*;
 use std::cell::RefCell;
 
 use crate::{
-    engine::{
-        point::{AbsPoint, Point},
-        renderer::DrawInstruction,
-        traits::Entity,
-    },
+    engine::{point::Point, renderer::DrawInstruction, traits::Entity},
     PlayerInput,
 };
 
@@ -27,7 +23,6 @@ impl World {
     }
 
     pub fn detect_collision(&self, point: &Point) -> bool {
-        let point = AbsPoint::from(point);
         point.x == 0
             || (point.x + 2) >= self.columns - 1
             || point.y == 0
@@ -37,13 +32,13 @@ impl World {
     pub fn get_random_position(&self) -> Point {
         let mut rng = self.rng.borrow_mut();
         Point::new(
-            rng.gen_range(1..(self.columns - 1) / 2) as f32,
-            rng.gen_range(1..self.rows - 1) as f32,
+            rng.gen_range(1..(self.columns - 1) / 2),
+            rng.gen_range(1..self.rows - 1),
         )
     }
 
     pub fn get_center_position(&self) -> Point {
-        Point::new((self.columns / 2) as f32, (self.rows / 2) as f32)
+        Point::new(self.columns / 2, self.rows / 2)
     }
 }
 
@@ -66,15 +61,15 @@ mod tests {
         #[test]
         fn it_detects_horizontal_collision() {
             let world = World::new(6, 6);
-            assert!(world.detect_collision(&Point::new(2.0, 0.0)));
-            assert!(world.detect_collision(&Point::new(2.0, 5.0)));
+            assert!(world.detect_collision(&Point::new(2, 0)));
+            assert!(world.detect_collision(&Point::new(2, 5)));
         }
 
         #[test]
         fn it_detects_vertical_collision() {
             let world = World::new(6, 6);
-            assert!(world.detect_collision(&Point::new(0.0, 2.0)));
-            assert!(world.detect_collision(&Point::new(5.0, 2.0)));
+            assert!(world.detect_collision(&Point::new(0, 2)));
+            assert!(world.detect_collision(&Point::new(5, 2)));
         }
     }
 
@@ -85,13 +80,13 @@ mod tests {
         #[test]
         fn it_returns_the_center_even() {
             let world = World::new(6, 6);
-            assert_eq!(world.get_center_position(), Point::new(3.0, 3.0));
+            assert_eq!(world.get_center_position(), Point::new(3, 3));
         }
 
         #[test]
         fn it_returns_the_center_odd() {
             let world = World::new(5, 5);
-            assert_eq!(world.get_center_position(), Point::new(2.0, 2.0));
+            assert_eq!(world.get_center_position(), Point::new(2, 2));
         }
     }
 }

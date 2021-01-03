@@ -16,7 +16,7 @@ pub struct Food {
 impl Food {
     pub fn new(position: Point) -> Self {
         Self {
-            position: position * Point::new(2.0, 1.0),
+            position: position * Point::new(2, 1),
         }
     }
 
