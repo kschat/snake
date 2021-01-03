@@ -16,6 +16,12 @@ use crate::{
 
 const GAME_OVER: &'static str = "Game over";
 
+enum SnakeSceneState {
+    Playing,
+    Paused,
+    GameOver,
+}
+
 pub struct SnakeConfig {
     pub rows: usize,
     pub columns: usize,
@@ -30,7 +36,7 @@ pub struct SnakeScene {
     food: Food,
     score: Score,
     game_over_text: Text,
-    game_over: bool,
+    state: SnakeSceneState,
 }
 
 impl SnakeScene {
@@ -50,10 +56,29 @@ impl SnakeScene {
             world,
             food,
             game_over_text,
-            game_over: false,
+            state: SnakeSceneState::Playing,
             score: Score::new(Point::new(0.0, 0.0)),
             snake,
         }
+    }
+
+    fn update_scene(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
+        self.snake.update(elapsed);
+
+        if self.world.detect_collision(&self.snake.head()) || self.snake.self_collision() {
+            self.state = SnakeSceneState::GameOver;
+            self.game_over_text.visible = true;
+
+            return Ok(GameLoopSignal::Run);
+        }
+
+        if self.snake.detect_collision(self.food.get_position()) {
+            self.snake.grow(self.config.grow_rate);
+            self.food = Food::new(self.world.get_random_position());
+            self.score.increment();
+        }
+
+        Ok(GameLoopSignal::Run)
     }
 }
 
@@ -72,22 +97,10 @@ impl GameScene for SnakeScene {
     }
 
     fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
-        self.snake.update(elapsed);
-
-        if self.world.detect_collision(&self.snake.head()) || self.snake.self_collision() {
-            self.game_over = true;
-            self.game_over_text.visible = true;
-
-            return Ok(GameLoopSignal::Pause);
-        }
-
-        if self.snake.detect_collision(self.food.get_position()) {
-            self.snake.grow(self.config.grow_rate);
-            self.food = Food::new(self.world.get_random_position());
-            self.score.increment();
-        }
-
-        Ok(GameLoopSignal::Run)
+        Ok(match self.state {
+            SnakeSceneState::Paused | SnakeSceneState::GameOver => GameLoopSignal::Run,
+            SnakeSceneState::Playing => self.update_scene(elapsed)?,
+        })
     }
 
     fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal> {
@@ -98,18 +111,27 @@ impl GameScene for SnakeScene {
                 KeyCode::Char('d') | KeyCode::Right => PlayerInput::Right,
                 KeyCode::Char('w') | KeyCode::Up => PlayerInput::Up,
                 KeyCode::Char('p') => PlayerInput::Pause,
-                KeyCode::Char('q') => return Ok(GameLoopSignal::Stop),
-                _ => return Ok(GameLoopSignal::Run),
+                KeyCode::Char('q') => PlayerInput::Quit,
+                _ => PlayerInput::Noop,
             },
-            Event::Mouse(_) | Event::Resize(_, _) => return Ok(GameLoopSignal::Run),
+            Event::Mouse(_) | Event::Resize(_, _) => PlayerInput::Noop,
         };
 
-        if self.game_over {
-            return Ok(GameLoopSignal::Pause);
-        }
-
-        self.snake.process_input(&input);
-
-        Ok(GameLoopSignal::Run)
+        Ok(match (input, &self.state) {
+            (PlayerInput::Quit, _) => GameLoopSignal::Stop,
+            (PlayerInput::Pause, SnakeSceneState::Paused) => {
+                self.state = SnakeSceneState::Playing;
+                GameLoopSignal::Run
+            }
+            (PlayerInput::Pause, SnakeSceneState::Playing) => {
+                self.state = SnakeSceneState::Paused;
+                GameLoopSignal::Run
+            }
+            (input, SnakeSceneState::Playing) => {
+                self.snake.process_input(&input);
+                GameLoopSignal::Run
+            }
+            _ => GameLoopSignal::Run,
+        })
     }
 }

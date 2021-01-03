@@ -10,6 +10,7 @@ use crate::{
     PlayerInput,
 };
 
+// TODO make world an entity manager
 pub struct World {
     rows: usize,
     columns: usize,

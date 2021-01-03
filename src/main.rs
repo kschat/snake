@@ -18,6 +18,8 @@ pub enum PlayerInput {
     Left,
     Right,
     Pause,
+    Noop,
+    Quit,
 }
 
 // speed, grow rate

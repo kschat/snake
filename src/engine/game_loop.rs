@@ -12,7 +12,6 @@ pub struct GameLoopConfig {
 pub enum GameLoopSignal {
     Run,
     Stop,
-    Pause,
 }
 
 pub struct GameLoop<W: Write> {
@@ -53,7 +52,6 @@ impl<W: Write> GameLoop<W> {
 
             match state {
                 GameLoopSignal::Stop => break,
-                GameLoopSignal::Pause => continue,
                 GameLoopSignal::Run => (),
             }
 
@@ -63,7 +61,6 @@ impl<W: Write> GameLoop<W> {
                 state = scene.update(&self.ms_per_update)?;
                 match state {
                     GameLoopSignal::Stop => break 'game_loop,
-                    GameLoopSignal::Pause => break,
                     GameLoopSignal::Run => (),
                 }
             }
