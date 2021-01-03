@@ -9,7 +9,7 @@ use crossterm::{
 
 use super::point::{AbsPoint, Point};
 
-const PIXEL: &'static str = "█";
+const PIXEL: &str = "█";
 
 #[derive(Debug)]
 pub struct Pixel {

@@ -38,7 +38,11 @@ impl<W: Write> GameLoop<W> {
     }
 
     pub fn run(&mut self) -> Result<()> {
-        let scene = self.scenes.get_mut(0).ok_or(anyhow!("No scene loaded"))?;
+        let scene = self
+            .scenes
+            .get_mut(0)
+            .ok_or_else(|| anyhow!("No scene loaded"))?;
+
         let mut timestep = Timestep::new();
         let mut lag = Duration::from_millis(0);
         let mut state = GameLoopSignal::Run;

@@ -14,7 +14,7 @@ use crate::{
     PlayerInput,
 };
 
-const GAME_OVER: &'static str = "Game over";
+const GAME_OVER: &str = "Game over";
 
 enum SnakeSceneState {
     Playing,

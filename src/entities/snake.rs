@@ -47,8 +47,7 @@ impl Snake {
         self.body
             .iter()
             .skip(1)
-            .find(|&part| self.detect_collision(part))
-            .is_some()
+            .any(|part| self.detect_collision(part))
     }
 
     pub fn grow(&mut self, amount: usize) {

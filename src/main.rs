@@ -22,8 +22,6 @@ pub enum PlayerInput {
     Quit,
 }
 
-// speed, grow rate
-
 #[derive(Debug, StructOpt)]
 #[structopt(name = "snake")]
 struct CommandOptions {
@@ -56,7 +54,7 @@ fn main() -> Result<()> {
     let command_options = CommandOptions::from_args();
 
     let (columns, rows) =
-        terminal::size().with_context(|| format!("Failed to get terminal size"))?;
+        terminal::size().with_context(|| "Failed to get terminal size".to_string())?;
     let columns = (columns - 1) as usize;
     let rows = (rows - 1) as usize;
 
