@@ -42,6 +42,14 @@ struct CommandOptions {
         help = "Set the rate at which the snake grows when eating food"
     )]
     grow_rate: usize,
+
+    #[structopt(
+        short,
+        long,
+        default_value = "15",
+        help = "Set the max frame rate to target"
+    )]
+    frame_rate: u8,
 }
 
 fn main() -> Result<()> {
@@ -55,7 +63,7 @@ fn main() -> Result<()> {
     let mut game = GameLoop::new(
         Renderer::new(stdout(), rows, columns),
         GameLoopConfig {
-            frame_rate: 15,
+            frame_rate: command_options.frame_rate,
             input_poll_rate: Duration::from_millis(0),
         },
     );
