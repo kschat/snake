@@ -54,3 +54,44 @@ impl Entity for World {
         vec![]
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(test)]
+    mod detect_collision {
+        use super::*;
+
+        #[test]
+        fn it_detects_horizontal_collision() {
+            let world = World::new(6, 6);
+            assert!(world.detect_collision(&Point::new(2.0, 0.0)));
+            assert!(world.detect_collision(&Point::new(2.0, 5.0)));
+        }
+
+        #[test]
+        fn it_detects_vertical_collision() {
+            let world = World::new(6, 6);
+            assert!(world.detect_collision(&Point::new(0.0, 2.0)));
+            assert!(world.detect_collision(&Point::new(5.0, 2.0)));
+        }
+    }
+
+    #[cfg(test)]
+    mod get_center_position {
+        use super::*;
+
+        #[test]
+        fn it_returns_the_center_even() {
+            let world = World::new(6, 6);
+            assert_eq!(world.get_center_position(), Point::new(3.0, 3.0));
+        }
+
+        #[test]
+        fn it_returns_the_center_odd() {
+            let world = World::new(5, 5);
+            assert_eq!(world.get_center_position(), Point::new(2.0, 2.0));
+        }
+    }
+}
