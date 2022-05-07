@@ -29,17 +29,17 @@ test_script:
       cargo build --target %TARGET% &&
       cargo build --target %TARGET% --release &&
       cargo test --target %TARGET% &&
-      cargo test --target %TARGET% --release 
+      cargo test --target %TARGET% --release
     )
 
 before_deploy:
-  - cargo rustc --target %TARGET% --release --bin %CRATE_NAME% 
+  - cargo rustc --target %TARGET% --release --bin %CRATE_NAME%
   - ps: ci\before_deploy.ps1
 
 deploy:
   artifact: /.*\.zip/
   auth_token:
-    secure: 0+7FcsWxA2ZDGLwBjY/OXI8lRT1FBqBlvyY5Dcl0xNdCR0MEFT+3skh06QI6Db9b
+    secure: AP0yWkAgZS4PUGnZwXOPDZspC6/Zbnu6zFoR6XnRuNHjb48dbanbt0rIoxlgD8yy
   description: ''
   on:
     RUST_VERSION: stable

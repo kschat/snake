@@ -22,7 +22,7 @@ matrix:
       os: osx
 
     # Windows
-    - env: TARGET=x86_64-pc-windows-gnu
+    # - env: TARGET=x86_64-pc-windows-gnu
 
 before_install:
   - set -e
@@ -42,7 +42,7 @@ before_deploy:
 
 deploy:
   api_key:
-    secure: LWWyIXisCDy5Ju8rhjEFK+DhoudBJMXlkMp+Q8x5TKR91YZ1PTKs8Qa3GyLcqokVqQ0YOdkV53xVLuB6sfnNUv3TiDkyLckZMu3Xqo3sZkMy1PWMSvHBN1CkTELbZIZA3agG3K3BMPNIV1FeBsXehB8AtZZmlQcoAKAcchdgnOyUzcR0O9VXId7SbBTkaHy1PTA31HULPvyUGodt1HxChuQnNKrCsrXOw6YDP4rg3qSKQ0S2z+KvZXE9obkPXledJ1405uCeg+wBtn5Cy9bQlctKQS9uB3d0DC9LyFJ2p2GcvCpzoq+0v3DX3B6BqY0ybQTHYPyoGUq20sGyRIzSky1bjziA3uU6Uhu1Xzh7OqONBATIDBQqf2B/w3f5wTjugWDLCl8kzPeZgY6Muf/5zm7LuLRKVGGmWTOidI3aSyflN5ump61aWwdKu6Q0axS+ivQAR5yVP/aPvBcFhGOhUwU00nm58ZIhFI5kubjBoV2F6oO9nIZgjCR2VlB1QBRmZwf4MQ2f3XQVcPgBy9vvJS+fgcsfruMJc/SAX3g/7R6pF2M+6pTrFueObsIj+aP1vTKAaridpmqYjnImtVumJ9+95p8+wQtcSBNmtcpDv+GstXJFy2DtxGZwf4G6zvPRkhdO1vXrsGheZHFfaPY0xWoMNgNHGko95rdMJegb1p8=
+    secure: cWcMo/RVMCKV9STiJSzf5aMm1Zskq+HCXC4SJOXjHOibltjwaU6cU7hW+kLjxV8aDB1D2BkPVxZ69hegUy7Qjio7Qla3z2iklS/Y+mNmgi/X/23vLKfttnnGSuNkmHJngM0Yyb2cL60UyUdVgcyq1G1rI8BH0bv9lkBvs2SWSS3p7I6CCjBss7Z6SrRAh4lM4QL9HGK66wvPyVtg5u5/5mYab+k0MuGHt+0c6bSbHsT9hRe5e3irHxoH6zE/dSQyoqXSnlUg3M4i6RCUhZh0gBIQCznYv0r5NYwnkgwyB68rch+Zr3NxDiT37Nr0wcxCrT9bKv212nEwj6Nzjf5JeqWJJxcRRcT0kt9CtrIZXyF1xDUxEg0EeOP4uQZ7NZxn62m9joiVusuDB04gan8KGAVYrK+jUFs2l+KHC4DBQywpa3FwroBKaM5ZmGRfzzKD4TBcZ1WiVtQZPdSVAYq77p7/9uOUSYb94STA9A2drKsDsw+KK60dMmn2eQppHoUAZTym3/vkHOOhQSE9XzH+2L5lzQv4G3/lKOoYd4IBGAjxz9RZmZt2x/czM+GPj0zTbWqO8eXHSlujdcRLgFG9Od0VozURrc6ct9Hrw221Lhd930xSfXnVy8OQLFaOmbE+JGjKy7vZqsFpuYSA4Ox14dqdUNCxqAQXlGkAOrDf7zM=
   file_glob: true
   file: $CRATE_NAME-$TRAVIS_TAG-$TARGET.*
   on:
