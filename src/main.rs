@@ -9,7 +9,10 @@ use engine::{
     renderer::Renderer,
 };
 use snake_scene::{SnakeConfig, SnakeScene};
-use std::{io::stdout, time::Duration};
+use std::{
+    io::{stdout, BufWriter},
+    time::Duration,
+};
 use structopt::StructOpt;
 
 pub enum PlayerInput {
@@ -59,7 +62,7 @@ fn main() -> Result<()> {
     let rows = (rows - 1) as usize;
 
     let mut game = GameLoop::new(
-        Renderer::new(stdout(), rows, columns),
+        Renderer::new(BufWriter::new(stdout()), rows, columns),
         GameLoopConfig {
             frame_rate: command_options.frame_rate,
             input_poll_rate: Duration::from_millis(0),
