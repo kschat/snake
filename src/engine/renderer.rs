@@ -3,7 +3,7 @@ use std::{io::Write, iter::repeat_with};
 use anyhow::{Context, Result};
 use crossterm::{
     cursor,
-    style::{self, Color},
+    style::{self, Color, Print},
     terminal, QueueableCommand,
 };
 
@@ -211,19 +211,29 @@ impl<W: Write> Renderer<W> {
             instruction.apply(&mut self.buffer);
         }
 
+        let mut previous_fg = Color::Reset;
+        let mut previous_bg = Color::Reset;
+
         for y in 0..self.rows {
+            self.writer.queue(cursor::MoveTo(0, y as u16))?;
             for x in 0..self.columns {
                 let pixel = self.buffer.get_at(&Point::new(x, y)).unwrap();
 
-                self.writer
-                    .queue(cursor::MoveTo(x as u16, y as u16))?
-                    .queue(style::PrintStyledContent(
-                        style::style(pixel.content.clone())
-                            .with(pixel.fg)
-                            .on(pixel.bg),
-                    ))?;
+                if pixel.fg != previous_fg {
+                    self.writer.queue(style::SetForegroundColor(pixel.fg))?;
+                    previous_fg = pixel.fg;
+                }
+
+                if pixel.bg != previous_bg {
+                    self.writer.queue(style::SetForegroundColor(pixel.bg))?;
+                    previous_bg = pixel.bg;
+                }
+
+                self.writer.queue(Print(&pixel.content))?;
             }
         }
+
+        self.writer.flush()?;
 
         Ok(())
     }
