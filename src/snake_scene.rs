@@ -8,6 +8,7 @@ use crate::{
         game_loop::GameLoopSignal,
         point::Point,
         renderer::DrawInstruction,
+        timestep::Timestep,
         traits::{Entity, GameScene},
     },
     entities::{food::Food, score::Score, snake::Snake, text::Text, world::World},
@@ -15,6 +16,8 @@ use crate::{
 };
 
 const GAME_OVER: &str = "Game over";
+
+const FPS_LABEL: &str = "FPS: ";
 
 enum SnakeSceneState {
     Playing,
@@ -27,6 +30,7 @@ pub struct SnakeConfig {
     pub columns: usize,
     pub speed: f32,
     pub grow_rate: usize,
+    pub show_frame_rate: bool,
 }
 
 pub struct SnakeScene {
@@ -36,6 +40,7 @@ pub struct SnakeScene {
     food: Food,
     score: Score,
     game_over_text: Text,
+    fps_text: Text,
     state: SnakeSceneState,
 }
 
@@ -49,6 +54,12 @@ impl SnakeScene {
             visible: false,
         };
 
+        let fps_text = Text {
+            value: FPS_LABEL.into(),
+            position: Point::new(config.columns - (FPS_LABEL.len() + 3), 0),
+            visible: config.show_frame_rate,
+        };
+
         let snake = Snake::new(Point::new(4, 2), 6, config.speed);
 
         Self {
@@ -56,6 +67,7 @@ impl SnakeScene {
             world,
             food,
             game_over_text,
+            fps_text,
             state: SnakeSceneState::Playing,
             score: Score::new(Point::new(0, 0)),
             snake,
@@ -65,7 +77,7 @@ impl SnakeScene {
     fn update_scene(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
         self.snake.update(elapsed);
 
-        if self.world.detect_collision(&self.snake.head()) || self.snake.self_collision() {
+        if self.world.detect_collision(self.snake.head()) || self.snake.self_collision() {
             self.state = SnakeSceneState::GameOver;
             self.game_over_text.visible = true;
 
@@ -83,10 +95,13 @@ impl SnakeScene {
 }
 
 impl GameScene for SnakeScene {
-    fn draw<'a>(&'a mut self) -> Vec<DrawInstruction<'a>> {
+    fn draw(&mut self, timestep: &Timestep) -> Vec<DrawInstruction> {
+        self.fps_text.value = format!("{}{}", FPS_LABEL, timestep.frame_rate);
+
         vec![
             self.score.draw(),
             self.game_over_text.draw(),
+            self.fps_text.draw(),
             self.food.draw(),
             self.snake.draw(),
             self.world.draw(),

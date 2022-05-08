@@ -51,6 +51,9 @@ struct CommandOptions {
         help = "Set the max frame rate to target"
     )]
     frame_rate: u8,
+
+    #[structopt(long, help = "Display the current frame rate")]
+    show_frame_rate: bool,
 }
 
 fn main() -> Result<()> {
@@ -74,6 +77,7 @@ fn main() -> Result<()> {
         rows,
         grow_rate: command_options.grow_rate,
         speed: command_options.speed,
+        show_frame_rate: command_options.show_frame_rate,
     })));
 
     game.run()

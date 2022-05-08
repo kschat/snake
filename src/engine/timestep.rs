@@ -5,6 +5,7 @@ pub struct Timestep {
     delta_time: Duration,
     frame_time: Duration,
     frame_count: u16,
+    pub frame_rate: u16,
 }
 
 impl Timestep {
@@ -14,6 +15,7 @@ impl Timestep {
             delta_time: Duration::from_millis(0),
             frame_time: Duration::from_millis(0),
             frame_count: 0,
+            frame_rate: 0,
         }
     }
 
@@ -29,17 +31,16 @@ impl Timestep {
         Instant::now().duration_since(self.last_time)
     }
 
-    #[allow(dead_code)]
-    pub fn frame_rate(&mut self) -> Option<u16> {
+    pub fn track_frame(&mut self) -> Option<u16> {
         self.frame_time += self.elapsed_time();
         self.frame_count += 1;
 
         if self.frame_time >= Duration::from_secs(1) {
-            let frame_count = self.frame_count;
+            self.frame_rate = self.frame_count;
             self.frame_time = Duration::from_millis(0);
             self.frame_count = 0;
 
-            return Some(frame_count);
+            return Some(self.frame_rate);
         }
 
         None

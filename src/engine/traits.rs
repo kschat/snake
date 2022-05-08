@@ -2,7 +2,7 @@ use anyhow::Result;
 use crossterm::event::Event;
 use std::time::Duration;
 
-use super::{game_loop::GameLoopSignal, renderer::DrawInstruction};
+use super::{game_loop::GameLoopSignal, renderer::DrawInstruction, timestep::Timestep};
 
 pub trait Entity {
     type Input;
@@ -13,7 +13,7 @@ pub trait Entity {
 }
 
 pub trait GameScene {
-    fn draw<'a>(&'a mut self) -> Vec<DrawInstruction<'a>>;
+    fn draw(&mut self, timestep: &Timestep) -> Vec<DrawInstruction>;
     fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal>;
     fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal>;
 }

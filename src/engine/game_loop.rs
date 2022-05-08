@@ -69,7 +69,7 @@ impl<W: Write> GameLoop<W> {
                 }
             }
 
-            self.renderer.draw(&scene.draw())?;
+            self.renderer.draw(&scene.draw(&timestep))?;
 
             let remaining_tick_time = self
                 .ms_per_update
@@ -79,6 +79,8 @@ impl<W: Write> GameLoop<W> {
             if remaining_tick_time > Duration::from_millis(0) {
                 sleep(remaining_tick_time);
             }
+
+            timestep.track_frame();
         }
 
         self.renderer.stop()
