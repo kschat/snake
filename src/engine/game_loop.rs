@@ -69,7 +69,7 @@ impl<W: Write> GameLoop<W> {
                 }
             }
 
-            self.renderer.draw(&scene.draw(&timestep))?;
+            self.renderer.draw_diff(&scene.draw(&timestep))?;
 
             let remaining_tick_time = self
                 .ms_per_update

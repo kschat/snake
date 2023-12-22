@@ -1,4 +1,5 @@
-use std::{io::Write, iter::repeat_with};
+use std::hash::{Hash, Hasher};
+use std::{collections::hash_map::DefaultHasher, io::Write, iter::repeat_with};
 
 use anyhow::{Context, Result};
 use crossterm::{
@@ -11,11 +12,12 @@ use super::point::Point;
 
 const PIXEL: &str = "█";
 
-#[derive(Debug)]
+#[derive(Debug, Eq)]
 pub struct Pixel {
     pub content: String,
     pub fg: Color,
     pub bg: Color,
+    dirty: bool,
 }
 
 impl Pixel {
@@ -33,6 +35,28 @@ impl Pixel {
     pub fn with_bg(self, bg: Color) -> Self {
         Self { bg, ..self }
     }
+
+    pub fn set_dirty(self) -> Self {
+        Self {
+            dirty: true,
+            ..self
+        }
+    }
+}
+
+impl PartialEq for Pixel {
+    // don't compare the dirty flag for equality
+    fn eq(&self, other: &Self) -> bool {
+        self.content == other.content && self.fg == other.fg && self.bg == other.bg
+    }
+}
+
+impl Hash for Pixel {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.content.hash(state);
+        self.fg.hash(state);
+        self.bg.hash(state);
+    }
 }
 
 impl Default for Pixel {
@@ -41,6 +65,7 @@ impl Default for Pixel {
             content: " ".into(),
             fg: Color::Reset,
             bg: Color::Reset,
+            dirty: false,
         }
     }
 }
@@ -65,15 +90,28 @@ pub struct ScreenBuffer {
     rows: usize,
     columns: usize,
     pixels: Vec<Pixel>,
+    hash: u64,
 }
 
 impl ScreenBuffer {
     pub fn new(rows: usize, columns: usize) -> Self {
+        let pixels = repeat_with(Default::default)
+            .take(rows * columns)
+            .collect::<Vec<_>>();
+
         Self {
             rows,
             columns,
-            pixels: repeat_with(Pixel::default).take(rows * columns).collect(),
+            hash: Self::calculate_hash(&pixels),
+            pixels,
         }
+    }
+
+    #[inline(always)]
+    fn calculate_hash(pixels: &[Pixel]) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        pixels.hash(&mut hasher);
+        hasher.finish()
     }
 
     #[inline(always)]
@@ -89,8 +127,19 @@ impl ScreenBuffer {
         position.y * columns + position.x
     }
 
+    pub fn update_hash(&mut self) -> u64 {
+        self.hash = Self::calculate_hash(&self.pixels);
+        self.hash
+    }
+
     pub fn empty(&mut self) {
-        self.pixels = self.pixels.iter().map(|_| Pixel::default()).collect();
+        self.pixels.iter_mut().for_each(|pixel| {
+            let mut clear = Default::default();
+            if *pixel != clear {
+                clear.dirty = true;
+            }
+            *pixel = clear;
+        });
     }
 
     pub fn get_at(&self, position: &Point) -> Option<&Pixel> {
@@ -98,9 +147,16 @@ impl ScreenBuffer {
             .get(Self::calculate_index(self.columns, self.rows, position))
     }
 
-    pub fn get_mut_at(&mut self, position: &Point) -> Option<&mut Pixel> {
+    pub fn get_at_mut(&mut self, position: &Point) -> Option<&mut Pixel> {
         self.pixels
             .get_mut(Self::calculate_index(self.columns, self.rows, position))
+    }
+
+    pub fn set_at(&mut self, position: &Point, pixel: Pixel) {
+        let current_pixel = self.get_at_mut(position).unwrap();
+        if *current_pixel != pixel {
+            *current_pixel = pixel.set_dirty();
+        }
     }
 }
 
@@ -132,8 +188,10 @@ impl<'a> DrawInstruction<'a> {
                 for row in 0..height {
                     for column in 0..width {
                         let position = position + Point::new(column, row);
-                        *buffer.get_mut_at(&position).unwrap() =
-                            Pixel::new(PIXEL).with_fg(style.fg).with_bg(style.bg);
+                        buffer.set_at(
+                            &position,
+                            Pixel::new(PIXEL).with_fg(style.fg).with_bg(style.bg),
+                        );
                     }
                 }
             }
@@ -145,9 +203,12 @@ impl<'a> DrawInstruction<'a> {
             } => {
                 content.chars().enumerate().for_each(|(i, c)| {
                     let position = position + Point::new(i, 0);
-                    *buffer.get_mut_at(&position).unwrap() = Pixel::new(&c.to_string())
-                        .with_fg(style.fg)
-                        .with_bg(style.bg);
+                    buffer.set_at(
+                        &position,
+                        Pixel::new(&c.to_string())
+                            .with_fg(style.fg)
+                            .with_bg(style.bg),
+                    );
                 });
             }
         }
@@ -204,20 +265,32 @@ impl<W: Write> Renderer<W> {
             .with_context(|| "Failed to restore terminal to original state")
     }
 
-    pub fn draw(&mut self, draw_instructions: &[DrawInstruction]) -> Result<()> {
+    pub fn draw_diff(&mut self, draw_instructions: &[DrawInstruction]) -> Result<()> {
+        let hash = self.buffer.hash;
         self.buffer.empty();
 
         for instruction in draw_instructions {
             instruction.apply(&mut self.buffer);
         }
 
+        if hash == self.buffer.update_hash() {
+            eprintln!("Hash the same, not drawing");
+            return Ok(());
+        }
+
         let mut previous_fg = Color::Reset;
         let mut previous_bg = Color::Reset;
+        let mut draw_counter = 0;
 
         for y in 0..self.rows {
-            self.writer.queue(cursor::MoveTo(0, y as u16))?;
             for x in 0..self.columns {
                 let pixel = self.buffer.get_at(&Point::new(x, y)).unwrap();
+                if !pixel.dirty {
+                    continue;
+                }
+
+                draw_counter += 1;
+                self.writer.queue(cursor::MoveTo(x as u16, y as u16))?;
 
                 if pixel.fg != previous_fg {
                     self.writer.queue(style::SetForegroundColor(pixel.fg))?;
@@ -225,7 +298,7 @@ impl<W: Write> Renderer<W> {
                 }
 
                 if pixel.bg != previous_bg {
-                    self.writer.queue(style::SetForegroundColor(pixel.bg))?;
+                    self.writer.queue(style::SetBackgroundColor(pixel.bg))?;
                     previous_bg = pixel.bg;
                 }
 
@@ -234,6 +307,7 @@ impl<W: Write> Renderer<W> {
         }
 
         self.writer.flush()?;
+        eprintln!("Draw calls this step: {draw_counter}");
 
         Ok(())
     }
