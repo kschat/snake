@@ -129,7 +129,7 @@ impl GameScene for SnakeScene {
                 KeyCode::Char('q') => PlayerInput::Quit,
                 _ => PlayerInput::Noop,
             },
-            Event::Mouse(_) | Event::Resize(_, _) => PlayerInput::Noop,
+            _ => PlayerInput::Noop,
         };
 
         Ok(match (input, &self.state) {
