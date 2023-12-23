@@ -1,4 +1,6 @@
-use std::{io::Write, iter::repeat_with};
+use std::collections::HashMap;
+use std::hash::Hash;
+use std::io::Write;
 
 use anyhow::{Context, Result};
 use crossterm::{
@@ -11,7 +13,7 @@ use super::point::Point;
 
 const PIXEL: &str = "█";
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Pixel {
     pub content: String,
     pub fg: Color,
@@ -61,46 +63,59 @@ impl Default for Style {
 }
 
 #[derive(Debug)]
-pub struct ScreenBuffer {
+pub struct FrameBuffer {
     rows: usize,
     columns: usize,
-    pixels: Vec<Pixel>,
+    pixels: HashMap<Point, Pixel>,
+    previous: HashMap<Point, Pixel>,
 }
 
-impl ScreenBuffer {
+impl FrameBuffer {
     pub fn new(rows: usize, columns: usize) -> Self {
         Self {
             rows,
             columns,
-            pixels: repeat_with(Pixel::default).take(rows * columns).collect(),
+            pixels: HashMap::new(),
+            previous: HashMap::new(),
         }
     }
 
-    #[inline(always)]
-    fn calculate_index(columns: usize, rows: usize, position: &Point) -> usize {
-        if position.x >= columns {
-            panic!("Tried to index out of buffer bounds: x too large");
+    /// Iterates over the current buffer updating its state so it clears the
+    /// the screen.
+    pub fn clear(&mut self) {
+        self.previous = self.pixels.clone();
+        self.pixels.retain(|_, pixel| {
+            let clear = Default::default();
+            // If the previous pixel was cleared there's no reason to write
+            // it again. Remove it from the buffer.
+            if *pixel == clear {
+                return false;
+            }
+
+            // If the pixel isn't a clear, then we need to clear it during the
+            // next draw call.
+            *pixel = clear;
+            true
+        });
+    }
+
+    pub fn frame_changed(&self) -> bool {
+        self.previous != self.pixels
+    }
+
+    pub fn set_at(&mut self, position: Point, pixel: Pixel) {
+        if position.x < self.columns && position.y < self.rows {
+            self.pixels.insert(position, pixel);
         }
-
-        if position.y >= rows {
-            panic!("Tried to index out of buffer bounds: y too large");
-        }
-
-        position.y * columns + position.x
     }
+}
 
-    pub fn empty(&mut self) {
-        self.pixels = self.pixels.iter().map(|_| Pixel::default()).collect();
-    }
+impl<'a> IntoIterator for &'a FrameBuffer {
+    type Item = <&'a HashMap<Point, Pixel> as IntoIterator>::Item;
+    type IntoIter = <&'a HashMap<Point, Pixel> as IntoIterator>::IntoIter;
 
-    pub fn get_at(&self, position: &Point) -> Option<&Pixel> {
-        self.pixels
-            .get(Self::calculate_index(self.columns, self.rows, position))
-    }
-
-    pub fn get_mut_at(&mut self, position: &Point) -> Option<&mut Pixel> {
-        self.pixels
-            .get_mut(Self::calculate_index(self.columns, self.rows, position))
+    fn into_iter(self) -> Self::IntoIter {
+        self.pixels.iter()
     }
 }
 
@@ -119,7 +134,7 @@ pub enum DrawInstruction<'a> {
 }
 
 impl<'a> DrawInstruction<'a> {
-    pub fn apply(&self, buffer: &mut ScreenBuffer) {
+    pub fn apply(&self, buffer: &mut FrameBuffer) {
         match self {
             DrawInstruction::Square {
                 position,
@@ -132,8 +147,10 @@ impl<'a> DrawInstruction<'a> {
                 for row in 0..height {
                     for column in 0..width {
                         let position = position + Point::new(column, row);
-                        *buffer.get_mut_at(&position).unwrap() =
-                            Pixel::new(PIXEL).with_fg(style.fg).with_bg(style.bg);
+                        buffer.set_at(
+                            position,
+                            Pixel::new(PIXEL).with_fg(style.fg).with_bg(style.bg),
+                        );
                     }
                 }
             }
@@ -145,9 +162,12 @@ impl<'a> DrawInstruction<'a> {
             } => {
                 content.chars().enumerate().for_each(|(i, c)| {
                     let position = position + Point::new(i, 0);
-                    *buffer.get_mut_at(&position).unwrap() = Pixel::new(&c.to_string())
-                        .with_fg(style.fg)
-                        .with_bg(style.bg);
+                    buffer.set_at(
+                        position,
+                        Pixel::new(&c.to_string())
+                            .with_fg(style.fg)
+                            .with_bg(style.bg),
+                    );
                 });
             }
         }
@@ -156,20 +176,16 @@ impl<'a> DrawInstruction<'a> {
 
 #[derive(Debug)]
 pub struct Renderer<W: Write> {
-    rows: usize,
-    columns: usize,
     writer: W,
-    buffer: ScreenBuffer,
+    buffer: FrameBuffer,
     running: bool,
 }
 
 impl<W: Write> Renderer<W> {
     pub fn new(writer: W, rows: usize, columns: usize) -> Self {
-        let buffer = ScreenBuffer::new(rows, columns);
+        let buffer = FrameBuffer::new(rows, columns);
 
         Self {
-            rows,
-            columns,
             writer,
             buffer,
             running: false,
@@ -205,32 +221,34 @@ impl<W: Write> Renderer<W> {
     }
 
     pub fn draw(&mut self, draw_instructions: &[DrawInstruction]) -> Result<()> {
-        self.buffer.empty();
+        self.buffer.clear();
 
         for instruction in draw_instructions {
             instruction.apply(&mut self.buffer);
         }
 
+        if !self.buffer.frame_changed() {
+            return Ok(());
+        }
+
         let mut previous_fg = Color::Reset;
         let mut previous_bg = Color::Reset;
 
-        for y in 0..self.rows {
-            self.writer.queue(cursor::MoveTo(0, y as u16))?;
-            for x in 0..self.columns {
-                let pixel = self.buffer.get_at(&Point::new(x, y)).unwrap();
+        for (position, pixel) in &self.buffer {
+            self.writer
+                .queue(cursor::MoveTo(position.x as u16, position.y as u16))?;
 
-                if pixel.fg != previous_fg {
-                    self.writer.queue(style::SetForegroundColor(pixel.fg))?;
-                    previous_fg = pixel.fg;
-                }
-
-                if pixel.bg != previous_bg {
-                    self.writer.queue(style::SetForegroundColor(pixel.bg))?;
-                    previous_bg = pixel.bg;
-                }
-
-                self.writer.queue(Print(&pixel.content))?;
+            if pixel.fg != previous_fg {
+                self.writer.queue(style::SetForegroundColor(pixel.fg))?;
+                previous_fg = pixel.fg;
             }
+
+            if pixel.bg != previous_bg {
+                self.writer.queue(style::SetBackgroundColor(pixel.bg))?;
+                previous_bg = pixel.bg;
+            }
+
+            self.writer.queue(Print(&pixel.content))?;
         }
 
         self.writer.flush()?;
