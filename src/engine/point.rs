@@ -3,7 +3,7 @@ use std::ops;
 use impl_ops::*;
 use num_traits::Num;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
 pub struct Point<T = usize>
 where
     T: Num,
@@ -25,6 +25,12 @@ where
             x: T::zero(),
             y: T::zero(),
         }
+    }
+}
+
+impl From<&Point<usize>> for (usize, usize) {
+    fn from(value: &Point<usize>) -> Self {
+        (value.x, value.y)
     }
 }
 
