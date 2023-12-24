@@ -10,6 +10,7 @@ use crate::{
     PlayerInput,
 };
 
+#[derive(Debug)]
 pub struct Snake {
     body: Vec<Point>,
     size: usize,
@@ -35,19 +36,23 @@ impl Snake {
         }
     }
 
-    pub fn head(&self) -> &Point {
-        &self.body[0]
+    pub fn head(&self) -> Point {
+        self.body[0]
     }
 
-    pub fn detect_collision(&self, point: &Point) -> bool {
+    pub fn detect_head_collision(&self, point: Point) -> bool {
         self.head() == point
     }
 
-    pub fn self_collision(&self) -> bool {
+    pub fn detect_self_collision(&self) -> bool {
         self.body
             .iter()
             .skip(1)
-            .any(|part| self.detect_collision(part))
+            .any(|part| self.detect_head_collision(*part))
+    }
+
+    pub fn detect_collision(&self, point: Point) -> bool {
+        self.body.iter().any(|part| *part == point)
     }
 
     pub fn grow(&mut self, amount: usize) {
@@ -77,7 +82,7 @@ impl Entity for Snake {
         while self.movement_progress > 1.0 {
             self.movement_progress -= 1.0;
 
-            let head = *self.head();
+            let head = self.head();
 
             if self.size != self.body.len() {
                 self.body.insert(0, head);

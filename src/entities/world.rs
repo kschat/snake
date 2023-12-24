@@ -7,6 +7,7 @@ use crate::{
 };
 
 // TODO make world an entity manager
+#[derive(Debug)]
 pub struct World {
     rows: usize,
     columns: usize,
@@ -22,7 +23,7 @@ impl World {
         }
     }
 
-    pub fn detect_collision(&self, point: &Point) -> bool {
+    pub fn detect_collision(&self, point: Point) -> bool {
         point.x == 0
             || (point.x + 2) >= self.columns - 1
             || point.y == 0
@@ -61,15 +62,15 @@ mod tests {
         #[test]
         fn it_detects_horizontal_collision() {
             let world = World::new(6, 6);
-            assert!(world.detect_collision(&Point::new(2, 0)));
-            assert!(world.detect_collision(&Point::new(2, 5)));
+            assert!(world.detect_collision(Point::new(2, 0)));
+            assert!(world.detect_collision(Point::new(2, 5)));
         }
 
         #[test]
         fn it_detects_vertical_collision() {
             let world = World::new(6, 6);
-            assert!(world.detect_collision(&Point::new(0, 2)));
-            assert!(world.detect_collision(&Point::new(5, 2)));
+            assert!(world.detect_collision(Point::new(0, 2)));
+            assert!(world.detect_collision(Point::new(5, 2)));
         }
     }
 

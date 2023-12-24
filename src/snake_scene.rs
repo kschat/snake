@@ -77,20 +77,31 @@ impl SnakeScene {
     fn update_scene(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
         self.snake.update(elapsed);
 
-        if self.world.detect_collision(self.snake.head()) || self.snake.self_collision() {
+        if self.world.detect_collision(self.snake.head()) || self.snake.detect_self_collision() {
             self.state = SnakeSceneState::GameOver;
             self.game_over_text.visible = true;
 
             return Ok(GameLoopSignal::Run);
         }
 
-        if self.snake.detect_collision(self.food.get_position()) {
+        if self.snake.detect_head_collision(self.food.get_position()) {
             self.snake.grow(self.config.grow_rate);
-            self.food = Food::new(self.world.get_random_position());
+            self.food = self.spawn_food();
             self.score.increment();
         }
 
         Ok(GameLoopSignal::Run)
+    }
+
+    fn spawn_food(&self) -> Food {
+        let mut tries = 0;
+        let mut position = self.world.get_random_position();
+        while tries < 4 && self.snake.detect_collision(position) {
+            tries += 1;
+            position = self.world.get_random_position();
+        }
+
+        Food::new(position)
     }
 }
 
