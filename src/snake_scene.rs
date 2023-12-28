@@ -61,7 +61,7 @@ impl SnakeScene {
             visible: config.show_frame_rate,
         };
 
-        let snake = Snake::new(Point::new(4, 2), 6, config.speed);
+        let snake = world.create_snake();
 
         Self {
             config,

@@ -34,6 +34,12 @@ impl From<&Point<usize>> for (usize, usize) {
     }
 }
 
+impl From<(usize, usize)> for Point<usize> {
+    fn from((x, y): (usize, usize)) -> Self {
+        Point::new(x, y)
+    }
+}
+
 pub type Vector = Point<isize>;
 
 impl_op_ex!(+|a: &Point, b: &Point| -> Point {

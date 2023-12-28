@@ -20,7 +20,8 @@ pub struct Snake {
 }
 
 impl Snake {
-    pub fn new(head: Point, size: usize, speed: f32) -> Self {
+    pub fn new<T: Into<Point>>(head: T, size: usize, speed: f32) -> Self {
+        let head: Point = head.into();
         let body = repeat_with(|| head)
             .enumerate()
             .map(|(index, point)| point + Point::new((size - index) * 2, 0))
@@ -30,8 +31,8 @@ impl Snake {
         Self {
             body,
             size,
-            velocity: Point::new(2, 0),
             speed,
+            velocity: Vector::new(2, 0),
             movement_progress: 0.0,
         }
     }

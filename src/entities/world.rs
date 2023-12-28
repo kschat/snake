@@ -7,12 +7,15 @@ use crate::{
     PlayerInput,
 };
 
+use super::snake::Snake;
+
 // TODO make world an entity manager
 #[derive(Debug)]
 pub struct World {
     origin: Point,
     diagonal: Point,
     show_border: bool,
+    snake_speed: f32,
     rng: RefCell<ThreadRng>,
 }
 
@@ -23,6 +26,7 @@ impl World {
             origin,
             diagonal,
             show_border: config.show_border,
+            snake_speed: config.speed,
             rng: RefCell::new(rand::thread_rng()),
         }
     }
@@ -47,6 +51,10 @@ impl World {
             (self.origin.x + self.diagonal.x) / 2,
             (self.origin.y + self.diagonal.y) / 2,
         )
+    }
+
+    pub fn create_snake(&self) -> Snake {
+        Snake::new(self.origin + Point::new(2usize, 2), 6, self.snake_speed)
     }
 }
 
