@@ -18,7 +18,7 @@ pub struct World {
 
 impl World {
     pub fn new(config: &SnakeConfig, origin: Point) -> Self {
-        let diagonal = Point::new(config.columns, config.rows);
+        let diagonal = Point::new(config.columns - origin.x, config.rows - origin.y);
         Self {
             origin,
             diagonal,
