@@ -54,6 +54,9 @@ struct CommandOptions {
 
     #[structopt(long, help = "Display the current frame rate")]
     show_frame_rate: bool,
+
+    #[structopt(short, long, help = "Wrap the game area in a border")]
+    show_border: bool,
 }
 
 fn main() -> Result<()> {
@@ -61,8 +64,8 @@ fn main() -> Result<()> {
 
     let (columns, rows) =
         terminal::size().with_context(|| "Failed to get terminal size".to_string())?;
-    let columns = (columns - 1) as usize;
-    let rows = (rows - 1) as usize;
+    let columns = columns as usize;
+    let rows = rows as usize;
 
     let mut game = GameLoop::new(
         Renderer::new(BufWriter::new(stdout()), rows, columns),
@@ -78,6 +81,7 @@ fn main() -> Result<()> {
         grow_rate: command_options.grow_rate,
         speed: command_options.speed,
         show_frame_rate: command_options.show_frame_rate,
+        show_border: command_options.show_border,
     })));
 
     game.run()

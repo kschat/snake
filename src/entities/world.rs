@@ -3,43 +3,50 @@ use std::cell::RefCell;
 
 use crate::{
     engine::{point::Point, renderer::DrawInstruction, traits::Entity},
+    snake_scene::SnakeConfig,
     PlayerInput,
 };
 
 // TODO make world an entity manager
 #[derive(Debug)]
 pub struct World {
-    rows: usize,
-    columns: usize,
+    origin: Point,
+    diagonal: Point,
+    show_border: bool,
     rng: RefCell<ThreadRng>,
 }
 
 impl World {
-    pub fn new(rows: usize, columns: usize) -> Self {
+    pub fn new(config: &SnakeConfig, origin: Point) -> Self {
+        let diagonal = Point::new(config.columns, config.rows);
         Self {
-            rows,
-            columns,
+            origin,
+            diagonal,
+            show_border: config.show_border,
             rng: RefCell::new(rand::thread_rng()),
         }
     }
 
     pub fn detect_collision(&self, point: Point) -> bool {
-        point.x == 0
-            || (point.x + 2) >= self.columns - 1
-            || point.y == 0
-            || point.y >= self.rows - 1
+        point.x <= self.origin.x
+            || point.x >= self.diagonal.x - 2
+            || point.y <= self.origin.y
+            || point.y >= self.diagonal.y - 1
     }
 
     pub fn get_random_position(&self) -> Point {
         let mut rng = self.rng.borrow_mut();
         Point::new(
-            rng.gen_range(1..(self.columns - 1) / 2),
-            rng.gen_range(1..self.rows - 1),
+            rng.gen_range((self.origin.x + 1)..((self.diagonal.x - 1) / 2)),
+            rng.gen_range((self.origin.y + 1)..(self.diagonal.y - 1)),
         )
     }
 
     pub fn get_center_position(&self) -> Point {
-        Point::new(self.columns / 2, self.rows / 2)
+        Point::new(
+            (self.origin.x + self.diagonal.x) / 2,
+            (self.origin.y + self.diagonal.y) / 2,
+        )
     }
 }
 
@@ -47,7 +54,16 @@ impl Entity for World {
     type Input = PlayerInput;
 
     fn draw(&self) -> Vec<DrawInstruction> {
-        vec![]
+        if !self.show_border {
+            return vec![];
+        }
+
+        vec![DrawInstruction::Rectangle {
+            position: self.origin,
+            width: self.diagonal.x - self.origin.x,
+            height: self.diagonal.y - self.origin.y,
+            style: Default::default(),
+        }]
     }
 }
 
@@ -55,20 +71,31 @@ impl Entity for World {
 mod tests {
     use super::*;
 
+    const CONFIG: SnakeConfig = SnakeConfig {
+        rows: 10,
+        columns: 10,
+        speed: 5.0,
+        grow_rate: 1,
+        show_frame_rate: false,
+        show_border: false,
+    };
+
     #[cfg(test)]
     mod detect_collision {
         use super::*;
 
         #[test]
         fn it_detects_horizontal_collision() {
-            let world = World::new(6, 6);
+            let origin = Point::new(0, 0);
+            let world = World::new(&CONFIG, origin);
             assert!(world.detect_collision(Point::new(2, 0)));
             assert!(world.detect_collision(Point::new(2, 5)));
         }
 
         #[test]
         fn it_detects_vertical_collision() {
-            let world = World::new(6, 6);
+            let origin = Point::new(0, 0);
+            let world = World::new(&CONFIG, origin);
             assert!(world.detect_collision(Point::new(0, 2)));
             assert!(world.detect_collision(Point::new(5, 2)));
         }
@@ -80,13 +107,15 @@ mod tests {
 
         #[test]
         fn it_returns_the_center_even() {
-            let world = World::new(6, 6);
+            let origin = Point::new(0, 0);
+            let world = World::new(&CONFIG, origin);
             assert_eq!(world.get_center_position(), Point::new(3, 3));
         }
 
         #[test]
         fn it_returns_the_center_odd() {
-            let world = World::new(5, 5);
+            let origin = Point::new(0, 0);
+            let world = World::new(&CONFIG, origin);
             assert_eq!(world.get_center_position(), Point::new(2, 2));
         }
     }

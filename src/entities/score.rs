@@ -15,16 +15,21 @@ pub struct Score {
 
 impl Score {
     pub fn new(position: Point) -> Self {
+        let value = 0;
         Self {
-            value: 0,
-            content: "Score: 0".into(),
+            value,
+            content: Self::format_score(value),
             position,
         }
     }
 
     pub fn increment(&mut self) {
         self.value += 1;
-        self.content = format!("Score: {}", self.value);
+        self.content = Self::format_score(self.value);
+    }
+
+    fn format_score(value: u32) -> String {
+        format!(" Score: {value} ")
     }
 }
 

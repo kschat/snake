@@ -66,9 +66,9 @@ impl Entity for Snake {
     fn draw(&self) -> Vec<DrawInstruction> {
         self.body
             .iter()
-            .map(|&position| DrawInstruction::Square {
-                size: 1,
+            .map(|&position| DrawInstruction::Text {
                 position,
+                content: "██",
                 style: Style {
                     fg: Color::Green,
                     ..Default::default()

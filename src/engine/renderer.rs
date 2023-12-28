@@ -6,12 +6,10 @@ use anyhow::{Context, Result};
 use crossterm::{
     cursor,
     style::{self, Color, Print},
-    terminal, QueueableCommand,
+    terminal, ExecutableCommand, QueueableCommand,
 };
 
 use super::point::Point;
-
-const PIXEL: &str = "█";
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Pixel {
@@ -47,7 +45,7 @@ impl Default for Pixel {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Style {
     pub fg: Color,
     pub bg: Color,
@@ -119,11 +117,12 @@ impl<'a> IntoIterator for &'a FrameBuffer {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum DrawInstruction<'a> {
-    Square {
+    Rectangle {
         position: Point,
-        size: usize,
+        width: usize,
+        height: usize,
         style: Style,
     },
     Text {
@@ -136,23 +135,59 @@ pub enum DrawInstruction<'a> {
 impl<'a> DrawInstruction<'a> {
     pub fn apply(&self, buffer: &mut FrameBuffer) {
         match self {
-            DrawInstruction::Square {
-                position,
-                size,
+            DrawInstruction::Rectangle {
+                position: origin,
+                width,
+                height,
                 style,
             } => {
-                let height = *size;
-                let width = 2 * height;
+                let diagonal = Point::new(origin.x + width, origin.y + height);
 
-                for row in 0..height {
-                    for column in 0..width {
-                        let position = position + Point::new(column, row);
-                        buffer.set_at(
-                            position,
-                            Pixel::new(PIXEL).with_fg(style.fg).with_bg(style.bg),
-                        );
-                    }
+                // top/bottom
+                for column in (origin.x + 1)..(diagonal.x - 1) {
+                    buffer.set_at(
+                        Point::new(column, origin.y),
+                        Pixel::new("─").with_fg(style.fg).with_bg(style.bg),
+                    );
+
+                    buffer.set_at(
+                        Point::new(column, diagonal.y - 1),
+                        Pixel::new("─").with_fg(style.fg).with_bg(style.bg),
+                    );
                 }
+
+                // left/right
+                for row in (origin.y + 1)..(diagonal.y - 1) {
+                    buffer.set_at(
+                        Point::new(origin.x, row),
+                        Pixel::new("│").with_fg(style.fg).with_bg(style.bg),
+                    );
+                    buffer.set_at(
+                        Point::new(diagonal.x - 1, row),
+                        Pixel::new("│").with_fg(style.fg).with_bg(style.bg),
+                    );
+                }
+
+                // top left corner
+                buffer.set_at(*origin, Pixel::new("╭").with_fg(style.fg).with_bg(style.bg));
+
+                // top right corner
+                buffer.set_at(
+                    Point::new(diagonal.x - 1, origin.y),
+                    Pixel::new("╮").with_fg(style.fg).with_bg(style.bg),
+                );
+
+                // bottom left corner
+                buffer.set_at(
+                    Point::new(origin.x, diagonal.y - 1),
+                    Pixel::new("╰").with_fg(style.fg).with_bg(style.bg),
+                );
+
+                // bottom right corner
+                buffer.set_at(
+                    Point::new(diagonal.x - 1, diagonal.y - 1),
+                    Pixel::new("╯").with_fg(style.fg).with_bg(style.bg),
+                );
             }
 
             DrawInstruction::Text {
@@ -233,10 +268,16 @@ impl<W: Write> Renderer<W> {
 
         let mut previous_fg = Color::Reset;
         let mut previous_bg = Color::Reset;
+        let mut previous_pos: Option<Point> = None;
 
+        self.writer.execute(terminal::BeginSynchronizedUpdate)?;
         for (position, pixel) in &self.buffer {
-            self.writer
-                .queue(cursor::MoveTo(position.x as u16, position.y as u16))?;
+            if !matches!(previous_pos, Some(p) if p.x + 1 == position.x && p.y == position.y) {
+                self.writer
+                    .queue(cursor::MoveTo(position.x as u16, position.y as u16))?;
+            }
+
+            previous_pos = Some(*position);
 
             if pixel.fg != previous_fg {
                 self.writer.queue(style::SetForegroundColor(pixel.fg))?;
@@ -252,6 +293,7 @@ impl<W: Write> Renderer<W> {
         }
 
         self.writer.flush()?;
+        self.writer.execute(terminal::EndSynchronizedUpdate)?;
 
         Ok(())
     }
