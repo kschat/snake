@@ -7,6 +7,7 @@ use crate::{
     PlayerInput,
 };
 
+#[derive(Debug)]
 pub struct Score {
     value: u32,
     content: String,

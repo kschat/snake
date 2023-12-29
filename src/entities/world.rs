@@ -3,8 +3,7 @@ use std::cell::RefCell;
 
 use crate::{
     engine::{point::Point, renderer::DrawInstruction, traits::Entity},
-    snake_scene::SnakeConfig,
-    PlayerInput,
+    PlayerInput, SnakeConfig,
 };
 
 use super::snake::Snake;

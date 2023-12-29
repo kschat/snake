@@ -7,33 +7,26 @@ use crate::{
     engine::{
         game_loop::GameLoopSignal,
         point::Point,
-        renderer::DrawInstruction,
+        renderer::{DrawInstruction, Style},
         timestep::Timestep,
         traits::{Entity, GameScene},
     },
     entities::{food::Food, score::Score, snake::Snake, text::Text, world::World},
-    PlayerInput,
+    PlayerInput, SnakeConfig,
 };
 
 const GAME_OVER: &str = "GAME OVER";
 
 const FPS_LABEL: &str = "FPS: ";
 
+#[derive(Debug)]
 enum SnakeSceneState {
     Playing,
     Paused,
     GameOver,
 }
 
-pub struct SnakeConfig {
-    pub rows: usize,
-    pub columns: usize,
-    pub speed: f32,
-    pub grow_rate: usize,
-    pub show_frame_rate: bool,
-    pub show_border: bool,
-}
-
+#[derive(Debug)]
 pub struct SnakeScene {
     config: SnakeConfig,
     world: World,
@@ -53,12 +46,14 @@ impl SnakeScene {
             value: GAME_OVER.into(),
             position: world.get_center_position() - Point::new(GAME_OVER.len() / 2, 0),
             visible: false,
+            style: Style::default(),
         };
 
         let fps_text = Text {
             value: FPS_LABEL.into(),
             position: Point::new(config.columns - (FPS_LABEL.len() + 6), 0),
             visible: config.show_frame_rate,
+            style: Style::default(),
         };
 
         let snake = world.create_snake();

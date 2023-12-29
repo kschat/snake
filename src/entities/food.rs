@@ -9,6 +9,7 @@ use crate::{
     PlayerInput,
 };
 
+#[derive(Debug)]
 pub struct Food {
     position: Point,
 }

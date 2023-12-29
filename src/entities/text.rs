@@ -1,3 +1,8 @@
+#![allow(dead_code)]
+
+use crossterm::style::Color;
+use unicode_segmentation::UnicodeSegmentation;
+
 use crate::{
     engine::{
         point::Point,
@@ -7,11 +12,69 @@ use crate::{
     PlayerInput,
 };
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Text {
     pub value: String,
     pub position: Point,
     pub visible: bool,
+    pub style: Style,
+}
+
+impl Text {
+    pub fn with_value(mut self, value: String) -> Self {
+        self.value = value;
+        self
+    }
+
+    pub fn at_position<T: Into<Point>>(mut self, position: T) -> Self {
+        self.position = position.into();
+        self
+    }
+
+    pub fn set_visibility(mut self, visible: bool) -> Self {
+        self.visible = visible;
+        self
+    }
+
+    pub fn show(self) -> Self {
+        self.set_visibility(true)
+    }
+
+    pub fn hide(self) -> Self {
+        self.set_visibility(false)
+    }
+
+    pub fn toggle(self) -> Self {
+        let visible = !self.visible;
+        self.set_visibility(visible)
+    }
+
+    pub fn center<T: Into<Point>>(self, center_point: T) -> Self {
+        // TODO use graphemes
+        // let width = self
+        //     .value
+        //     .graphemes(true)
+        //     .split('\n')
+        //     .fold(usize::MIN, |a, b| a.max(b.len()));
+
+        let width = self.value.split('\n').take(1).collect::<Vec<_>>()[0].len();
+        eprintln!("WIDTH {width:?}");
+        let center_point = center_point.into();
+        eprintln!("CENTER POINT {center_point:?}");
+        let position = center_point - Point::new(width / 2, 0);
+
+        self.at_position(position)
+    }
+
+    pub fn with_fg(mut self, fg: Color) -> Self {
+        self.style.fg = fg;
+        self
+    }
+
+    pub fn with_bg(mut self, bg: Color) -> Self {
+        self.style.bg = bg;
+        self
+    }
 }
 
 impl Entity for Text {
@@ -25,7 +88,7 @@ impl Entity for Text {
         vec![DrawInstruction::Text {
             content: &self.value,
             position: self.position,
-            style: Style::default(),
+            style: self.style,
         }]
     }
 }

@@ -12,7 +12,7 @@ pub trait Entity {
     fn process_input(&mut self, _input: &Self::Input) {}
 }
 
-pub trait GameScene {
+pub trait GameScene: 'static {
     fn draw(&mut self, timestep: &Timestep) -> Vec<DrawInstruction>;
     fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal>;
     fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal>;

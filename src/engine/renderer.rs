@@ -45,7 +45,7 @@ impl Default for Pixel {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Style {
     pub fg: Color,
     pub bg: Color,
@@ -195,15 +195,26 @@ impl<'a> DrawInstruction<'a> {
                 content,
                 style,
             } => {
-                content.chars().enumerate().for_each(|(i, c)| {
-                    let position = position + Point::new(i, 0);
+                let mut y_offset = 0;
+                let mut x_offset = 0;
+
+                for (i, c) in content.chars().enumerate() {
+                    if c == '\n' {
+                        y_offset += 1;
+                        x_offset = i;
+                    }
+
+                    let position = position + Point::new(i - x_offset, y_offset);
+
+                    // if !c.is_whitespace() {
                     buffer.set_at(
                         position,
                         Pixel::new(&c.to_string())
                             .with_fg(style.fg)
                             .with_bg(style.bg),
                     );
-                });
+                    // }
+                }
             }
         }
     }
