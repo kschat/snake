@@ -83,7 +83,7 @@ impl<W: Write> GameLoop<W> {
             while lag >= self.ms_per_update {
                 lag -= self.ms_per_update;
                 state = scene.update(&self.ms_per_update)?;
-                match scene.update(&self.ms_per_update)? {
+                match state {
                     GameLoopSignal::Stop => break 'game_loop,
                     GameLoopSignal::Run => (),
                     GameLoopSignal::Load(scene_id) => {

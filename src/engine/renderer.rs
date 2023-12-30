@@ -1,10 +1,11 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::hash::Hash;
 use std::io::Write;
 
 use anyhow::{Context, Result};
 use crossterm::{
     cursor,
+    event::EnableMouseCapture,
     style::{self, Color, Print},
     terminal, ExecutableCommand, QueueableCommand,
 };
@@ -64,8 +65,8 @@ impl Default for Style {
 pub struct FrameBuffer {
     rows: usize,
     columns: usize,
-    pixels: HashMap<Point, Pixel>,
-    previous: HashMap<Point, Pixel>,
+    pixels: BTreeMap<Point, Pixel>,
+    previous: BTreeMap<Point, Pixel>,
 }
 
 impl FrameBuffer {
@@ -73,8 +74,8 @@ impl FrameBuffer {
         Self {
             rows,
             columns,
-            pixels: HashMap::new(),
-            previous: HashMap::new(),
+            pixels: BTreeMap::new(),
+            previous: BTreeMap::new(),
         }
     }
 
@@ -109,8 +110,8 @@ impl FrameBuffer {
 }
 
 impl<'a> IntoIterator for &'a FrameBuffer {
-    type Item = <&'a HashMap<Point, Pixel> as IntoIterator>::Item;
-    type IntoIter = <&'a HashMap<Point, Pixel> as IntoIterator>::IntoIter;
+    type Item = <&'a BTreeMap<Point, Pixel> as IntoIterator>::Item;
+    type IntoIter = <&'a BTreeMap<Point, Pixel> as IntoIterator>::IntoIter;
 
     fn into_iter(self) -> Self::IntoIter {
         self.pixels.iter()
@@ -247,6 +248,7 @@ impl<W: Write> Renderer<W> {
         terminal::enable_raw_mode()?;
         self.writer
             .queue(terminal::EnterAlternateScreen)?
+            .queue(EnableMouseCapture)?
             .queue(cursor::Hide)?
             .flush()
             .with_context(|| "Failed to prepare terminal for game")
@@ -282,6 +284,7 @@ impl<W: Write> Renderer<W> {
         let mut previous_pos: Option<Point> = None;
 
         self.writer.execute(terminal::BeginSynchronizedUpdate)?;
+
         for (position, pixel) in &self.buffer {
             if !matches!(previous_pos, Some(p) if p.x + 1 == position.x && p.y == position.y) {
                 self.writer
@@ -303,6 +306,7 @@ impl<W: Write> Renderer<W> {
             self.writer.queue(Print(&pixel.content))?;
         }
 
+        self.writer.queue(style::ResetColor)?;
         self.writer.flush()?;
         self.writer.execute(terminal::EndSynchronizedUpdate)?;
 

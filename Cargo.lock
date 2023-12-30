@@ -338,6 +338,7 @@ dependencies = [
  "num-traits",
  "rand",
  "structopt",
+ "unicode-segmentation",
 ]
 
 [[package]]

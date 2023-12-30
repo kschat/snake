@@ -3,7 +3,7 @@ use std::ops;
 use impl_ops::*;
 use num_traits::Num;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, PartialOrd, Ord)]
 pub struct Point<T = usize>
 where
     T: Num,

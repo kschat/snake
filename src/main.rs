@@ -17,12 +17,14 @@ use std::{
 use structopt::StructOpt;
 use title_scene::TitleScene;
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PlayerInput {
     Up,
     Down,
     Left,
     Right,
     Pause,
+    Select,
     Noop,
     Quit,
 }

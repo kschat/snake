@@ -3,18 +3,16 @@
 use crossterm::style::Color;
 use unicode_segmentation::UnicodeSegmentation;
 
-use crate::{
-    engine::{
-        point::Point,
-        renderer::{DrawInstruction, Style},
-        traits::Entity,
-    },
-    PlayerInput,
+use crate::engine::{
+    point::Point,
+    renderer::{DrawInstruction, Style},
+    traits::Entity,
 };
 
 #[derive(Debug, Default)]
 pub struct Text {
-    pub value: String,
+    value: String,
+    longest_width: usize,
     pub position: Point,
     pub visible: bool,
     pub style: Style,
@@ -22,8 +20,21 @@ pub struct Text {
 
 impl Text {
     pub fn with_value(mut self, value: String) -> Self {
-        self.value = value;
+        self.update_value(value);
         self
+    }
+
+    pub fn update_value(&mut self, value: String) {
+        self.value = value;
+        self.longest_width = self
+            .value
+            .split('\n')
+            .map(|line| line.graphemes(true).count())
+            .fold(usize::MIN, |a, b| a.max(b));
+    }
+
+    pub fn get_value(&self) -> &str {
+        &self.value
     }
 
     pub fn at_position<T: Into<Point>>(mut self, position: T) -> Self {
@@ -50,18 +61,8 @@ impl Text {
     }
 
     pub fn center<T: Into<Point>>(self, center_point: T) -> Self {
-        // TODO use graphemes
-        // let width = self
-        //     .value
-        //     .graphemes(true)
-        //     .split('\n')
-        //     .fold(usize::MIN, |a, b| a.max(b.len()));
-
-        let width = self.value.split('\n').take(1).collect::<Vec<_>>()[0].len();
-        eprintln!("WIDTH {width:?}");
         let center_point = center_point.into();
-        eprintln!("CENTER POINT {center_point:?}");
-        let position = center_point - Point::new(width / 2, 0);
+        let position = center_point - Point::new(self.longest_width / 2, 0);
 
         self.at_position(position)
     }
@@ -78,7 +79,7 @@ impl Text {
 }
 
 impl Entity for Text {
-    type Input = PlayerInput;
+    type Input = ();
 
     fn draw(&self) -> Vec<DrawInstruction> {
         if !self.visible {

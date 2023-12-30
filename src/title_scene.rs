@@ -9,13 +9,13 @@ use crate::{
     engine::{
         game_loop::GameLoopSignal,
         point::Point,
-        renderer::DrawInstruction,
+        renderer::{DrawInstruction, Style},
         timestep::Timestep,
         traits::{Entity, GameScene},
     },
     entities::text::Text,
     snake_scene::SnakeScene,
-    SnakeConfig,
+    PlayerInput, SnakeConfig,
 };
 
 const TITLE: &str = "
@@ -27,14 +27,28 @@ const TITLE: &str = "
 ╚══════╝╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
 ";
 
+const STATIC_SNAKE: &str = "
+██████████████████████████████████████
+██                                  ██
+██
+██
+██
+██
+██
+████████████████
+              ██
+      ██████████
+";
+
+const STATIC_FOOD: &str = "⬤";
+
 #[derive(Debug)]
 pub struct TitleScene {
-    // config: SnakeConfig,
-    // origin: Point,
-    // diagonal: Point,
     title_text: Text,
-    new_game_text: Text,
-    settings_text: Text,
+    static_snake: Text,
+    static_food: Text,
+    options: Vec<Text>,
+    selected_index: usize,
 }
 
 impl TitleScene {
@@ -42,9 +56,6 @@ impl TitleScene {
         let origin = Point::new(0, 0);
         let diagonal = Point::new(config.columns - origin.x, config.rows - origin.y);
         let center = Self::get_center_position(origin, diagonal);
-        eprintln!("CONFIG {config:?}");
-        eprintln!("ORIGIN {origin:?}");
-        eprintln!("DIAGONAL {diagonal:?}");
 
         let title_text = Text::default()
             .with_value(TITLE.into())
@@ -52,27 +63,43 @@ impl TitleScene {
             .with_fg(Color::Yellow)
             .show();
 
-        let new_game_text = Text::default()
-            .with_value("    NEW GAME    ".into())
-            .center(center - Point::new(0usize, 5))
-            .with_fg(Color::Black)
-            .with_bg(Color::Yellow)
+        let static_snake = Text::default()
+            .with_value(STATIC_SNAKE.into())
+            .center(center - Point::new(0usize, 8))
+            .with_fg(Color::Green)
             .show();
 
-        let settings_text = Text::default()
-            .with_value("    SETTINGS    ".into())
-            .center(center - Point::new(0usize, 4))
-            .with_fg(Color::Yellow)
-            .with_bg(Color::Red)
+        let static_food = Text::default()
+            .with_value(STATIC_FOOD.into())
+            .center(Point::new(center.x + 18, center.y - 4))
+            .with_fg(Color::Red)
             .show();
+
+        let options = vec![
+            Text::default()
+                .with_value("    NEW GAME    ".into())
+                .center(center - Point::new(0usize, 5))
+                .with_fg(Color::Black)
+                .with_bg(Color::Yellow)
+                .show(),
+            Text::default()
+                .with_value("    SETTINGS    ".into())
+                .center(center - Point::new(0usize, 4))
+                .with_fg(Color::Yellow)
+                .show(),
+            Text::default()
+                .with_value("      QUIT      ".into())
+                .center(center - Point::new(0usize, 3))
+                .with_fg(Color::Yellow)
+                .show(),
+        ];
 
         Self {
-            // config,
-            // origin,
-            // diagonal,
             title_text,
-            new_game_text,
-            settings_text,
+            static_snake,
+            static_food,
+            options,
+            selected_index: 0,
         }
     }
 
@@ -84,9 +111,13 @@ impl TitleScene {
 impl GameScene for TitleScene {
     fn draw(&mut self, _timestep: &Timestep) -> Vec<DrawInstruction> {
         vec![
+            self.options
+                .iter()
+                .flat_map(|option| option.draw())
+                .collect::<Vec<_>>(),
             self.title_text.draw(),
-            self.new_game_text.draw(),
-            self.settings_text.draw(),
+            self.static_snake.draw(),
+            self.static_food.draw(),
         ]
         .into_iter()
         .flatten()
@@ -94,18 +125,56 @@ impl GameScene for TitleScene {
     }
 
     fn update(&mut self, _elapsed: &Duration) -> Result<GameLoopSignal> {
+        for (i, option) in self.options.iter_mut().enumerate() {
+            option.style = if self.selected_index == i {
+                Style {
+                    fg: Color::Black,
+                    bg: Color::Yellow,
+                }
+            } else {
+                Style {
+                    fg: Color::Yellow,
+                    bg: Color::Reset,
+                }
+            };
+        }
+
         Ok(GameLoopSignal::Run)
     }
 
-    fn process_input(&mut self, event: &crossterm::event::Event) -> Result<GameLoopSignal> {
-        let signal = match event {
+    fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal> {
+        let input = match event {
             Event::Key(e) => match e.code {
-                KeyCode::Char('s') => GameLoopSignal::load_scene::<SnakeScene>(),
-                KeyCode::Char('q') => GameLoopSignal::Stop,
-                _ => GameLoopSignal::Run,
+                KeyCode::Enter => PlayerInput::Select,
+                KeyCode::Char('q') => PlayerInput::Quit,
+                KeyCode::Char('a') | KeyCode::Left => PlayerInput::Left,
+                KeyCode::Char('s') | KeyCode::Down => PlayerInput::Down,
+                KeyCode::Char('d') | KeyCode::Right => PlayerInput::Right,
+                KeyCode::Char('w') | KeyCode::Up => PlayerInput::Up,
+                _ => PlayerInput::Noop,
             },
-            _ => GameLoopSignal::Run,
+            _ => PlayerInput::Noop,
         };
-        Ok(signal)
+
+        match input {
+            PlayerInput::Quit => return Ok(GameLoopSignal::Stop),
+            PlayerInput::Up => {
+                self.selected_index = self
+                    .selected_index
+                    .wrapping_sub(1)
+                    .clamp(0, self.options.len() - 1);
+            }
+            PlayerInput::Down => {
+                self.selected_index = (self.selected_index + 1) % self.options.len();
+            }
+            PlayerInput::Select => match self.selected_index {
+                0 => return Ok(GameLoopSignal::load_scene::<SnakeScene>()),
+                2 => return Ok(GameLoopSignal::Stop),
+                _ => (),
+            },
+            _ => (),
+        }
+
+        Ok(GameLoopSignal::Run)
     }
 }

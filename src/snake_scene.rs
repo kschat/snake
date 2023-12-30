@@ -7,7 +7,7 @@ use crate::{
     engine::{
         game_loop::GameLoopSignal,
         point::Point,
-        renderer::{DrawInstruction, Style},
+        renderer::DrawInstruction,
         timestep::Timestep,
         traits::{Entity, GameScene},
     },
@@ -19,7 +19,7 @@ const GAME_OVER: &str = "GAME OVER";
 
 const FPS_LABEL: &str = "FPS: ";
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 enum SnakeSceneState {
     Playing,
     Paused,
@@ -42,19 +42,15 @@ impl SnakeScene {
     pub fn new(config: SnakeConfig) -> Self {
         let world = Self::create_world(&config);
         let food = Food::new(world.get_random_position());
-        let game_over_text = Text {
-            value: GAME_OVER.into(),
-            position: world.get_center_position() - Point::new(GAME_OVER.len() / 2, 0),
-            visible: false,
-            style: Style::default(),
-        };
+        let game_over_text = Text::default()
+            .with_value(GAME_OVER.into())
+            .center(world.get_center_position())
+            .hide();
 
-        let fps_text = Text {
-            value: FPS_LABEL.into(),
-            position: Point::new(config.columns - (FPS_LABEL.len() + 6), 0),
-            visible: config.show_frame_rate,
-            style: Style::default(),
-        };
+        let fps_text = Text::default()
+            .with_value(FPS_LABEL.into())
+            .at_position(Point::new(config.columns - (FPS_LABEL.len() + 6), 0))
+            .set_visibility(config.show_frame_rate);
 
         let snake = world.create_snake();
 
@@ -107,7 +103,8 @@ impl SnakeScene {
 
 impl GameScene for SnakeScene {
     fn draw(&mut self, timestep: &Timestep) -> Vec<DrawInstruction> {
-        self.fps_text.value = format!(" {}{} ", FPS_LABEL, timestep.frame_rate);
+        self.fps_text
+            .update_value(format!(" {}{} ", FPS_LABEL, timestep.frame_rate));
 
         vec![
             self.game_over_text.draw(),
