@@ -206,15 +206,12 @@ impl<'a> DrawInstruction<'a> {
                     }
 
                     let position = position + Point::new(i - x_offset, y_offset);
-
-                    // if !c.is_whitespace() {
                     buffer.set_at(
                         position,
                         Pixel::new(&c.to_string())
                             .with_fg(style.fg)
                             .with_bg(style.bg),
                     );
-                    // }
                 }
             }
         }

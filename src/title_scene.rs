@@ -1,9 +1,9 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use crossterm::{
     event::{Event, KeyCode},
     style::Color,
 };
-use std::time::Duration;
+use std::{fmt::Display, time::Duration};
 
 use crate::{
     engine::{
@@ -42,6 +42,50 @@ const STATIC_SNAKE: &str = "
 
 const STATIC_FOOD: &str = "⬤";
 
+#[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord)]
+enum MenuOption {
+    NewGame = 0,
+    Settings,
+    Exit,
+}
+
+impl MenuOption {
+    pub fn perform_action(&self) -> GameLoopSignal {
+        match self {
+            Self::NewGame => GameLoopSignal::load_scene::<SnakeScene>(),
+            Self::Exit => GameLoopSignal::Stop,
+            _ => GameLoopSignal::Run,
+        }
+    }
+
+    pub fn iter() -> impl Iterator<Item = Self> {
+        [Self::NewGame, Self::Settings, Self::Exit].iter().copied()
+    }
+}
+
+impl Display for MenuOption {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NewGame => write!(f, "    NEW GAME    "),
+            Self::Settings => write!(f, "    SETTINGS    "),
+            Self::Exit => write!(f, "      EXIT      "),
+        }
+    }
+}
+
+impl TryFrom<usize> for MenuOption {
+    type Error = anyhow::Error;
+
+    fn try_from(value: usize) -> std::prelude::v1::Result<Self, Self::Error> {
+        Ok(match value {
+            0 => Self::NewGame,
+            1 => Self::Settings,
+            2 => Self::Exit,
+            _ => return Err(anyhow!("Failed to convert {value} to MenuOption")),
+        })
+    }
+}
+
 #[derive(Debug)]
 pub struct TitleScene {
     title_text: Text,
@@ -75,24 +119,22 @@ impl TitleScene {
             .with_fg(Color::Red)
             .show();
 
-        let options = vec![
-            Text::default()
-                .with_value("    NEW GAME    ".into())
-                .center(center - Point::new(0usize, 5))
-                .with_fg(Color::Black)
-                .with_bg(Color::Yellow)
-                .show(),
-            Text::default()
-                .with_value("    SETTINGS    ".into())
-                .center(center - Point::new(0usize, 4))
-                .with_fg(Color::Yellow)
-                .show(),
-            Text::default()
-                .with_value("      QUIT      ".into())
-                .center(center - Point::new(0usize, 3))
-                .with_fg(Color::Yellow)
-                .show(),
-        ];
+        let options = MenuOption::iter()
+            .enumerate()
+            .map(|(i, option)| {
+                let text = Text::default()
+                    .with_value(option.to_string())
+                    .center(center - Point::new(0usize, 5 - i))
+                    .with_fg(Color::Yellow)
+                    .show();
+
+                if i == 0 {
+                    return text.with_fg(Color::Black).with_bg(Color::Yellow);
+                }
+
+                text
+            })
+            .collect();
 
         Self {
             title_text,
@@ -105,6 +147,17 @@ impl TitleScene {
 
     pub fn get_center_position(origin: Point, diagonal: Point) -> Point {
         Point::new((origin.x + diagonal.x) / 2, (origin.y + diagonal.y) / 2)
+    }
+
+    pub fn select_previous_option(&mut self) {
+        self.selected_index = self
+            .selected_index
+            .wrapping_sub(1)
+            .clamp(0, self.options.len() - 1);
+    }
+
+    pub fn select_next_option(&mut self) {
+        self.selected_index = (self.selected_index + 1) % self.options.len();
     }
 }
 
@@ -158,20 +211,11 @@ impl GameScene for TitleScene {
 
         match input {
             PlayerInput::Quit => return Ok(GameLoopSignal::Stop),
-            PlayerInput::Up => {
-                self.selected_index = self
-                    .selected_index
-                    .wrapping_sub(1)
-                    .clamp(0, self.options.len() - 1);
+            PlayerInput::Up => self.select_previous_option(),
+            PlayerInput::Down => self.select_next_option(),
+            PlayerInput::Select => {
+                return Ok(MenuOption::try_from(self.selected_index)?.perform_action())
             }
-            PlayerInput::Down => {
-                self.selected_index = (self.selected_index + 1) % self.options.len();
-            }
-            PlayerInput::Select => match self.selected_index {
-                0 => return Ok(GameLoopSignal::load_scene::<SnakeScene>()),
-                2 => return Ok(GameLoopSignal::Stop),
-                _ => (),
-            },
             _ => (),
         }
 

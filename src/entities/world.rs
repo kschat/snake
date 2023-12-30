@@ -83,6 +83,7 @@ mod tests {
         columns: 10,
         speed: 5.0,
         grow_rate: 1,
+        frame_rate: 15,
         show_frame_rate: false,
         show_border: false,
     };
