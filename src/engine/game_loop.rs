@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
 use crossterm::event;
-use std::{io::Write, thread::sleep, time::Duration};
+use std::{any::TypeId, collections::HashMap, io::Write, thread::sleep, time::Duration};
 
 use super::{renderer::Renderer, timestep::Timestep, traits::GameScene};
 
@@ -9,16 +9,24 @@ pub struct GameLoopConfig {
     pub input_poll_rate: Duration,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub enum GameLoopSignal {
     Run,
     Stop,
+    Load(TypeId),
+}
+
+impl GameLoopSignal {
+    pub fn load_scene<T: GameScene>() -> Self {
+        Self::Load(TypeId::of::<T>())
+    }
 }
 
 pub struct GameLoop<W: Write> {
     config: GameLoopConfig,
     renderer: Renderer<W>,
     ms_per_update: Duration,
-    scenes: Vec<Box<dyn GameScene>>,
+    scenes: HashMap<TypeId, Box<dyn GameScene>>,
 }
 
 impl<W: Write> GameLoop<W> {
@@ -29,27 +37,36 @@ impl<W: Write> GameLoop<W> {
             config,
             renderer,
             ms_per_update,
-            scenes: vec![],
+            scenes: HashMap::new(),
         }
     }
 
-    pub fn load_scene(&mut self, scene: Box<dyn GameScene>) {
-        self.scenes.push(scene);
+    pub fn register_scene<TScene: GameScene>(&mut self, scene: TScene) -> &mut Self {
+        self.scenes.insert(TypeId::of::<TScene>(), Box::new(scene));
+        self
     }
 
-    pub fn run(&mut self) -> Result<()> {
-        let scene = self
-            .scenes
-            .get_mut(0)
-            .ok_or_else(|| anyhow!("No scene loaded"))?;
-
+    pub fn run<TInitScene: GameScene>(&mut self) -> Result<()> {
         let mut timestep = Timestep::new();
         let mut lag = Duration::from_millis(0);
         let mut state = GameLoopSignal::Run;
+        let mut next_scene = None;
+        let mut scene = self
+            .scenes
+            .get_mut(&TypeId::of::<TInitScene>())
+            .ok_or_else(|| anyhow!("No scene loaded"))?;
 
         self.renderer.start()?;
 
         'game_loop: loop {
+            if let Some(scene_id) = next_scene {
+                next_scene = None;
+                scene = self
+                    .scenes
+                    .get_mut(&scene_id)
+                    .ok_or_else(|| anyhow!("Scene with ID {scene_id:?} is not registered"))?;
+            }
+
             if event::poll(self.config.input_poll_rate)? {
                 state = scene.process_input(&event::read()?)?;
             }
@@ -57,6 +74,9 @@ impl<W: Write> GameLoop<W> {
             match state {
                 GameLoopSignal::Stop => break,
                 GameLoopSignal::Run => (),
+                GameLoopSignal::Load(scene_id) => {
+                    next_scene = Some(scene_id);
+                }
             }
 
             lag += timestep.delta();
@@ -66,6 +86,9 @@ impl<W: Write> GameLoop<W> {
                 match state {
                     GameLoopSignal::Stop => break 'game_loop,
                     GameLoopSignal::Run => (),
+                    GameLoopSignal::Load(scene_id) => {
+                        next_scene = Some(scene_id);
+                    }
                 }
             }
 

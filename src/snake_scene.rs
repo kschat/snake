@@ -12,27 +12,21 @@ use crate::{
         traits::{Entity, GameScene},
     },
     entities::{food::Food, score::Score, snake::Snake, text::Text, world::World},
-    PlayerInput,
+    PlayerInput, SnakeConfig,
 };
 
-const GAME_OVER: &str = "Game over";
+const GAME_OVER: &str = "GAME OVER";
 
 const FPS_LABEL: &str = "FPS: ";
 
+#[derive(Debug, Copy, Clone)]
 enum SnakeSceneState {
     Playing,
     Paused,
     GameOver,
 }
 
-pub struct SnakeConfig {
-    pub rows: usize,
-    pub columns: usize,
-    pub speed: f32,
-    pub grow_rate: usize,
-    pub show_frame_rate: bool,
-}
-
+#[derive(Debug)]
 pub struct SnakeScene {
     config: SnakeConfig,
     world: World,
@@ -46,21 +40,19 @@ pub struct SnakeScene {
 
 impl SnakeScene {
     pub fn new(config: SnakeConfig) -> Self {
-        let world = World::new(config.rows, config.columns);
+        let world = Self::create_world(&config);
         let food = Food::new(world.get_random_position());
-        let game_over_text = Text {
-            value: GAME_OVER.into(),
-            position: world.get_center_position() - Point::new(GAME_OVER.len() / 2, 0),
-            visible: false,
-        };
+        let game_over_text = Text::default()
+            .with_value(GAME_OVER.into())
+            .center(world.get_center_position())
+            .hide();
 
-        let fps_text = Text {
-            value: FPS_LABEL.into(),
-            position: Point::new(config.columns - (FPS_LABEL.len() + 3), 0),
-            visible: config.show_frame_rate,
-        };
+        let fps_text = Text::default()
+            .with_value(FPS_LABEL.into())
+            .at_position(Point::new(config.columns - (FPS_LABEL.len() + 6), 0))
+            .set_visibility(config.show_frame_rate);
 
-        let snake = Snake::new(Point::new(4, 2), 6, config.speed);
+        let snake = world.create_snake();
 
         Self {
             config,
@@ -68,47 +60,63 @@ impl SnakeScene {
             food,
             game_over_text,
             fps_text,
-            state: SnakeSceneState::Playing,
-            score: Score::new(Point::new(0, 0)),
             snake,
+            state: SnakeSceneState::Playing,
+            score: Score::new(Point::new(2, 0)),
         }
+    }
+
+    fn create_world(config: &SnakeConfig) -> World {
+        World::new(config, Point::new(0, 0))
     }
 
     fn update_scene(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
         self.snake.update(elapsed);
 
-        if self.world.detect_collision(self.snake.head()) || self.snake.self_collision() {
+        if self.world.detect_collision(self.snake.head()) || self.snake.detect_self_collision() {
             self.state = SnakeSceneState::GameOver;
             self.game_over_text.visible = true;
 
             return Ok(GameLoopSignal::Run);
         }
 
-        if self.snake.detect_collision(self.food.get_position()) {
+        if self.snake.detect_head_collision(self.food.get_position()) {
             self.snake.grow(self.config.grow_rate);
-            self.food = Food::new(self.world.get_random_position());
+            self.food = self.spawn_food();
             self.score.increment();
         }
 
         Ok(GameLoopSignal::Run)
     }
+
+    fn spawn_food(&self) -> Food {
+        let mut tries = 0;
+        let mut position = self.world.get_random_position();
+        while tries < 4 && self.snake.detect_collision(position) {
+            tries += 1;
+            position = self.world.get_random_position();
+        }
+
+        Food::new(position)
+    }
 }
 
 impl GameScene for SnakeScene {
     fn draw(&mut self, timestep: &Timestep) -> Vec<DrawInstruction> {
-        self.fps_text.value = format!("{}{}", FPS_LABEL, timestep.frame_rate);
+        self.fps_text
+            .update_value(format!(" {}{} ", FPS_LABEL, timestep.frame_rate));
 
         vec![
-            self.score.draw(),
             self.game_over_text.draw(),
-            self.fps_text.draw(),
             self.food.draw(),
-            self.snake.draw(),
             self.world.draw(),
+            self.snake.draw(),
+            self.score.draw(),
+            self.fps_text.draw(),
         ]
         .into_iter()
         .flatten()
-        .collect::<Vec<_>>()
+        .collect()
     }
 
     fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {

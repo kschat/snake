@@ -3,7 +3,7 @@ use std::ops;
 use impl_ops::*;
 use num_traits::Num;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Hash, PartialOrd, Ord)]
 pub struct Point<T = usize>
 where
     T: Num,
@@ -31,6 +31,12 @@ where
 impl From<&Point<usize>> for (usize, usize) {
     fn from(value: &Point<usize>) -> Self {
         (value.x, value.y)
+    }
+}
+
+impl From<(usize, usize)> for Point<usize> {
+    fn from((x, y): (usize, usize)) -> Self {
+        Point::new(x, y)
     }
 }
 
