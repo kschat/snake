@@ -1,8 +1,10 @@
+mod config;
 mod engine;
 mod entities;
 mod scenes;
 
 use anyhow::{Context, Result};
+use config::GameConfig;
 use crossterm::terminal;
 use engine::{
     game_loop::{GameLoop, GameLoopConfig},
@@ -61,38 +63,13 @@ pub struct CommandOptions {
     show_border: bool,
 }
 
-#[derive(Debug, Clone)]
-pub struct SnakeConfig {
-    pub rows: usize,
-    pub columns: usize,
-    pub speed: f32,
-    pub grow_rate: usize,
-    pub show_frame_rate: bool,
-    pub show_border: bool,
-    pub frame_rate: u8,
-}
-
-impl SnakeConfig {
-    pub fn new(command_options: CommandOptions, (columns, rows): (u16, u16)) -> Self {
-        Self {
-            columns: columns as usize,
-            rows: rows as usize,
-            grow_rate: command_options.grow_rate,
-            speed: command_options.speed,
-            show_frame_rate: command_options.show_frame_rate,
-            show_border: command_options.show_border,
-            frame_rate: command_options.frame_rate,
-        }
-    }
-}
-
 fn main() -> Result<()> {
     let command_options = CommandOptions::from_args();
 
     let terminal_size =
         terminal::size().with_context(|| "Failed to get terminal size".to_string())?;
 
-    let snake_config = SnakeConfig::new(command_options, terminal_size);
+    let snake_config = GameConfig::new(command_options, terminal_size);
 
     let mut game_loop = GameLoop::new(
         Renderer::new(

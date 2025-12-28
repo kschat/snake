@@ -4,6 +4,7 @@ use event::Event;
 use std::time::Duration;
 
 use crate::{
+    GameConfig, PlayerInput,
     engine::{
         game_loop::GameLoopSignal,
         point::Point,
@@ -12,7 +13,6 @@ use crate::{
         traits::{Entity, GameScene},
     },
     entities::{food::Food, score::Score, snake::Snake, text::Text, world::World},
-    PlayerInput, SnakeConfig,
 };
 
 const GAME_OVER: &str = "GAME OVER";
@@ -28,7 +28,7 @@ enum SnakeSceneState {
 
 #[derive(Debug)]
 pub struct SnakeScene {
-    config: SnakeConfig,
+    config: GameConfig,
     world: World,
     snake: Snake,
     food: Food,
@@ -39,7 +39,7 @@ pub struct SnakeScene {
 }
 
 impl SnakeScene {
-    pub fn new(config: SnakeConfig) -> Self {
+    pub fn new(config: GameConfig) -> Self {
         let world = Self::create_world(&config);
         let food = Food::new(world.get_random_position());
         let game_over_text = Text::default()
@@ -66,7 +66,7 @@ impl SnakeScene {
         }
     }
 
-    fn create_world(config: &SnakeConfig) -> World {
+    fn create_world(config: &GameConfig) -> World {
         World::new(config, Point::new(0, 0))
     }
 
@@ -81,7 +81,7 @@ impl SnakeScene {
         }
 
         if self.snake.detect_head_collision(self.food.get_position()) {
-            self.snake.grow(self.config.grow_rate);
+            self.snake.grow(self.config.snake.grow_rate);
             self.food = self.spawn_food();
             self.score.increment();
         }

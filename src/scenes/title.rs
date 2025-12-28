@@ -6,7 +6,7 @@ use crossterm::{
 use std::{fmt::Display, time::Duration};
 
 use crate::{
-    PlayerInput, SnakeConfig,
+    GameConfig, PlayerInput,
     engine::{
         game_loop::GameLoopSignal,
         point::Point,
@@ -97,7 +97,7 @@ pub struct TitleScene {
 }
 
 impl TitleScene {
-    pub fn new(config: SnakeConfig) -> Self {
+    pub fn new(config: GameConfig) -> Self {
         let origin = Point::new(0, 0);
         let diagonal = Point::new(config.columns - origin.x, config.rows - origin.y);
         let center = Self::get_center_position(origin, diagonal);

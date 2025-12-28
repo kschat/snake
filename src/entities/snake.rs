@@ -2,12 +2,12 @@ use crossterm::style::Color;
 use std::{iter::repeat_with, time::Duration};
 
 use crate::{
+    PlayerInput,
     engine::{
         point::{Point, Vector},
         renderer::{DrawInstruction, Style},
         traits::Entity,
     },
-    PlayerInput,
 };
 
 #[derive(Debug)]

@@ -2,7 +2,7 @@ use rand::prelude::*;
 use std::cell::RefCell;
 
 use crate::{
-    PlayerInput, SnakeConfig,
+    GameConfig, PlayerInput,
     engine::{point::Point, renderer::DrawInstruction, traits::Entity},
 };
 
@@ -19,13 +19,13 @@ pub struct World {
 }
 
 impl World {
-    pub fn new(config: &SnakeConfig, origin: Point) -> Self {
+    pub fn new(config: &GameConfig, origin: Point) -> Self {
         let diagonal = Point::new(config.columns - origin.x, config.rows - origin.y);
         Self {
             origin,
             diagonal,
             show_border: config.show_border,
-            snake_speed: config.speed,
+            snake_speed: config.snake.speed,
             rng: RefCell::new(rand::rng()),
         }
     }
@@ -76,13 +76,17 @@ impl Entity for World {
 
 #[cfg(test)]
 mod tests {
+    use crate::config::SnakeConfig;
+
     use super::*;
 
-    const CONFIG: SnakeConfig = SnakeConfig {
-        rows: 10,
-        columns: 10,
-        speed: 5.0,
-        grow_rate: 1,
+    const CONFIG: GameConfig = GameConfig {
+        snake: SnakeConfig {
+            speed: 5.0,
+            grow_rate: 1,
+        },
+        rows: 6,
+        columns: 6,
         frame_rate: 15,
         show_frame_rate: false,
         show_border: false,
@@ -122,8 +126,14 @@ mod tests {
 
         #[test]
         fn it_returns_the_center_odd() {
+            let config = {
+                let mut c = CONFIG.clone();
+                c.rows = 5;
+                c.columns = 5;
+                c
+            };
             let origin = Point::new(0, 0);
-            let world = World::new(&CONFIG, origin);
+            let world = World::new(&config, origin);
             assert_eq!(world.get_center_position(), Point::new(2, 2));
         }
     }
