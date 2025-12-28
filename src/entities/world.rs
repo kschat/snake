@@ -2,8 +2,8 @@ use rand::prelude::*;
 use std::cell::RefCell;
 
 use crate::{
-    engine::{point::Point, renderer::DrawInstruction, traits::Entity},
     PlayerInput, SnakeConfig,
+    engine::{point::Point, renderer::DrawInstruction, traits::Entity},
 };
 
 use super::snake::Snake;
@@ -26,7 +26,7 @@ impl World {
             diagonal,
             show_border: config.show_border,
             snake_speed: config.speed,
-            rng: RefCell::new(rand::thread_rng()),
+            rng: RefCell::new(rand::rng()),
         }
     }
 
@@ -40,8 +40,8 @@ impl World {
     pub fn get_random_position(&self) -> Point {
         let mut rng = self.rng.borrow_mut();
         Point::new(
-            rng.gen_range((self.origin.x + 1)..((self.diagonal.x - 1) / 2)),
-            rng.gen_range((self.origin.y + 1)..(self.diagonal.y - 1)),
+            rng.random_range((self.origin.x + 1)..((self.diagonal.x - 1) / 2)),
+            rng.random_range((self.origin.y + 1)..(self.diagonal.y - 1)),
         )
     }
 
