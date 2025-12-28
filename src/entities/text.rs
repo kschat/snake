@@ -38,10 +38,6 @@ impl Text {
         }
     }
 
-    pub fn get_value(&self) -> &str {
-        &self.value
-    }
-
     pub fn at_position<T: Into<Point>>(mut self, position: T) -> Self {
         self.position = position.into();
         self

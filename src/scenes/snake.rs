@@ -70,13 +70,13 @@ impl SnakeScene {
         World::new(config, Point::new(0, 0))
     }
 
-    fn update_scene(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
+    fn update_scene(&mut self, elapsed: &Duration) -> GameLoopSignal {
         self.state_text.visible = false;
 
         if self.state == SnakeSceneState::Paused {
             self.state_text.update_value(PAUSE_TEXT);
             self.state_text.visible = true;
-            return Ok(GameLoopSignal::Run);
+            return GameLoopSignal::Run;
         }
 
         self.snake.update(elapsed);
@@ -86,7 +86,7 @@ impl SnakeScene {
             self.state_text.update_value(GAME_OVER);
             self.state_text.visible = true;
 
-            return Ok(GameLoopSignal::Run);
+            return GameLoopSignal::Run;
         }
 
         if self.snake.detect_head_collision(self.food.get_position()) {
@@ -95,7 +95,7 @@ impl SnakeScene {
             self.score.increment();
         }
 
-        Ok(GameLoopSignal::Run)
+        GameLoopSignal::Run
     }
 
     fn spawn_food(&self) -> Food {
@@ -131,7 +131,7 @@ impl GameScene for SnakeScene {
     fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
         Ok(match self.state {
             SnakeSceneState::GameOver => GameLoopSignal::Run,
-            SnakeSceneState::Paused | SnakeSceneState::Playing => self.update_scene(elapsed)?,
+            SnakeSceneState::Paused | SnakeSceneState::Playing => self.update_scene(elapsed),
         })
     }
 
