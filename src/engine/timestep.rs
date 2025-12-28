@@ -9,6 +9,8 @@ pub struct Timestep {
 }
 
 impl Timestep {
+    const ONE_SECOND: Duration = Duration::from_secs(1);
+
     pub fn new() -> Self {
         Self {
             last_time: Instant::now(),
@@ -35,14 +37,14 @@ impl Timestep {
         self.frame_time += self.elapsed_time();
         self.frame_count += 1;
 
-        if self.frame_time >= Duration::from_secs(1) {
-            self.frame_rate = self.frame_count;
-            self.frame_time = Duration::from_millis(0);
-            self.frame_count = 0;
-
-            return Some(self.frame_rate);
+        if self.frame_time < Self::ONE_SECOND {
+            return None;
         }
 
-        None
+        self.frame_rate = self.frame_count;
+        self.frame_time = Duration::from_millis(0);
+        self.frame_count = 0;
+
+        Some(self.frame_rate)
     }
 }

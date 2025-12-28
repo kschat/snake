@@ -59,7 +59,7 @@ pub struct CommandOptions {
     #[structopt(long, help = "Display the current frame rate")]
     show_frame_rate: bool,
 
-    #[structopt(short, long, help = "Wrap the game area in a border")]
+    #[structopt(short = "b", long, help = "Wrap the game area in a border")]
     show_border: bool,
 }
 
