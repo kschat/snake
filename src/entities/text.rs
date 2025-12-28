@@ -13,24 +13,29 @@ use crate::engine::{
 pub struct Text {
     value: String,
     longest_width: usize,
+    center_point: Option<Point>,
     pub position: Point,
     pub visible: bool,
     pub style: Style,
 }
 
 impl Text {
-    pub fn with_value(mut self, value: String) -> Self {
-        self.update_value(value);
+    pub fn with_value<T: Into<String>>(mut self, value: T) -> Self {
+        self.update_value(value.into());
         self
     }
 
-    pub fn update_value(&mut self, value: String) {
-        self.value = value;
+    pub fn update_value<T: Into<String>>(&mut self, value: T) {
+        self.value = value.into();
         self.longest_width = self
             .value
             .split('\n')
             .map(|line| line.graphemes(true).count())
             .fold(usize::MIN, |a, b| a.max(b));
+
+        if let Some(center_point) = self.center_point {
+            self.position = self.calcuate_center(center_point);
+        }
     }
 
     pub fn get_value(&self) -> &str {
@@ -60,10 +65,11 @@ impl Text {
         self.set_visibility(visible)
     }
 
-    pub fn center<T: Into<Point>>(self, center_point: T) -> Self {
+    pub fn center<T: Into<Point>>(mut self, center_point: T) -> Self {
         let center_point = center_point.into();
-        let position = center_point - Point::new(self.longest_width / 2, 0);
+        let position = self.calcuate_center(center_point);
 
+        self.center_point = Some(center_point);
         self.at_position(position)
     }
 
@@ -75,6 +81,10 @@ impl Text {
     pub fn with_bg(mut self, bg: Color) -> Self {
         self.style.bg = bg;
         self
+    }
+
+    fn calcuate_center(&self, center_point: Point) -> Point {
+        center_point - Point::new(self.longest_width / 2, 0)
     }
 }
 

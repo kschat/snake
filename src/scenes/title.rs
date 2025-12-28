@@ -103,19 +103,19 @@ impl TitleScene {
         let center = Self::get_center_position(origin, diagonal);
 
         let title_text = Text::default()
-            .with_value(TITLE.into())
+            .with_value(TITLE)
             .center(center - Point::new(0usize, 15))
             .with_fg(Color::Yellow)
             .show();
 
         let static_snake = Text::default()
-            .with_value(STATIC_SNAKE.into())
+            .with_value(STATIC_SNAKE)
             .center(center - Point::new(0usize, 8))
             .with_fg(Color::Green)
             .show();
 
         let static_food = Text::default()
-            .with_value(STATIC_FOOD.into())
+            .with_value(STATIC_FOOD)
             .center(Point::new(center.x + 18, center.y - 4))
             .with_fg(Color::Red)
             .show();

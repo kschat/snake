@@ -16,10 +16,10 @@ use crate::{
 };
 
 const GAME_OVER: &str = "GAME OVER";
-
 const FPS_LABEL: &str = "FPS: ";
+const PAUSE_TEXT: &str = "PAUSED";
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 enum SnakeSceneState {
     Playing,
     Paused,
@@ -33,7 +33,7 @@ pub struct SnakeScene {
     snake: Snake,
     food: Food,
     score: Score,
-    game_over_text: Text,
+    state_text: Text,
     fps_text: Text,
     state: SnakeSceneState,
 }
@@ -42,14 +42,14 @@ impl SnakeScene {
     pub fn new(config: GameConfig) -> Self {
         let world = Self::create_world(&config);
         let food = Food::new(world.get_random_position());
-        let game_over_text = Text::default()
-            .with_value(GAME_OVER.into())
+        let state_text = Text::default()
+            .with_value(GAME_OVER)
             .center(world.get_center_position())
             .hide();
 
         let fps_text = Text::default()
-            .with_value(FPS_LABEL.into())
-            .at_position(Point::new(config.columns - (FPS_LABEL.len() + 6), 0))
+            .with_value(FPS_LABEL)
+            .at_position((config.columns - (FPS_LABEL.len() + 6), 0))
             .set_visibility(config.show_frame_rate);
 
         let snake = world.create_snake();
@@ -58,7 +58,7 @@ impl SnakeScene {
             config,
             world,
             food,
-            game_over_text,
+            state_text,
             fps_text,
             snake,
             state: SnakeSceneState::Playing,
@@ -71,11 +71,20 @@ impl SnakeScene {
     }
 
     fn update_scene(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
+        self.state_text.visible = false;
+
+        if self.state == SnakeSceneState::Paused {
+            self.state_text.update_value(PAUSE_TEXT);
+            self.state_text.visible = true;
+            return Ok(GameLoopSignal::Run);
+        }
+
         self.snake.update(elapsed);
 
         if self.world.detect_collision(self.snake.head()) || self.snake.detect_self_collision() {
             self.state = SnakeSceneState::GameOver;
-            self.game_over_text.visible = true;
+            self.state_text.update_value(GAME_OVER);
+            self.state_text.visible = true;
 
             return Ok(GameLoopSignal::Run);
         }
@@ -107,12 +116,12 @@ impl GameScene for SnakeScene {
             .update_value(format!(" {}{} ", FPS_LABEL, timestep.frame_rate));
 
         vec![
-            self.game_over_text.draw(),
             self.food.draw(),
             self.world.draw(),
             self.snake.draw(),
             self.score.draw(),
             self.fps_text.draw(),
+            self.state_text.draw(),
         ]
         .into_iter()
         .flatten()
@@ -121,8 +130,8 @@ impl GameScene for SnakeScene {
 
     fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal> {
         Ok(match self.state {
-            SnakeSceneState::Paused | SnakeSceneState::GameOver => GameLoopSignal::Run,
-            SnakeSceneState::Playing => self.update_scene(elapsed)?,
+            SnakeSceneState::GameOver => GameLoopSignal::Run,
+            SnakeSceneState::Paused | SnakeSceneState::Playing => self.update_scene(elapsed)?,
         })
     }
 
