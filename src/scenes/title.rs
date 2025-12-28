@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use crossterm::{
     event::{Event, KeyCode},
     style::Color,
@@ -6,6 +6,7 @@ use crossterm::{
 use std::{fmt::Display, time::Duration};
 
 use crate::{
+    PlayerInput, SnakeConfig,
     engine::{
         game_loop::GameLoopSignal,
         point::Point,
@@ -14,9 +15,9 @@ use crate::{
         traits::{Entity, GameScene},
     },
     entities::text::Text,
-    snake_scene::SnakeScene,
-    PlayerInput, SnakeConfig,
 };
+
+use super::snake::SnakeScene;
 
 const TITLE: &str = "
 ███████╗███╗   ██╗ █████╗ ██╗  ██╗███████╗
@@ -214,7 +215,7 @@ impl GameScene for TitleScene {
             PlayerInput::Up => self.select_previous_option(),
             PlayerInput::Down => self.select_next_option(),
             PlayerInput::Select => {
-                return Ok(MenuOption::try_from(self.selected_index)?.perform_action())
+                return Ok(MenuOption::try_from(self.selected_index)?.perform_action());
             }
             _ => (),
         }

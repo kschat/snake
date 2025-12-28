@@ -1,7 +1,6 @@
 mod engine;
 mod entities;
-mod snake_scene;
-mod title_scene;
+mod scenes;
 
 use anyhow::{Context, Result};
 use crossterm::terminal;
@@ -9,13 +8,12 @@ use engine::{
     game_loop::{GameLoop, GameLoopConfig},
     renderer::Renderer,
 };
-use snake_scene::SnakeScene;
+use scenes::{snake::SnakeScene, title::TitleScene};
 use std::{
-    io::{stdout, BufWriter},
+    io::{BufWriter, stdout},
     time::Duration,
 };
 use structopt::StructOpt;
-use title_scene::TitleScene;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PlayerInput {
