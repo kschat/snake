@@ -102,7 +102,7 @@ impl SnakeScene {
 }
 
 impl GameScene for SnakeScene {
-    fn draw(&mut self, timestep: &Timestep) -> Vec<DrawInstruction> {
+    fn draw(&mut self, timestep: &Timestep) -> Vec<DrawInstruction<'_>> {
         self.fps_text
             .update_value(format!(" {}{} ", FPS_LABEL, timestep.frame_rate));
 

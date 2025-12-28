@@ -60,7 +60,7 @@ impl World {
 impl Entity for World {
     type Input = PlayerInput;
 
-    fn draw(&self) -> Vec<DrawInstruction> {
+    fn draw(&self) -> Vec<DrawInstruction<'_>> {
         if !self.show_border {
             return vec![];
         }

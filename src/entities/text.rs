@@ -81,7 +81,7 @@ impl Text {
 impl Entity for Text {
     type Input = ();
 
-    fn draw(&self) -> Vec<DrawInstruction> {
+    fn draw(&self) -> Vec<DrawInstruction<'_>> {
         if !self.visible {
             return vec![];
         }

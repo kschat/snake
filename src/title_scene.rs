@@ -162,7 +162,7 @@ impl TitleScene {
 }
 
 impl GameScene for TitleScene {
-    fn draw(&mut self, _timestep: &Timestep) -> Vec<DrawInstruction> {
+    fn draw(&mut self, _timestep: &Timestep) -> Vec<DrawInstruction<'_>> {
         vec![
             self.options
                 .iter()

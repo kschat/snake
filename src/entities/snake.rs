@@ -17,6 +17,8 @@ pub struct Snake {
     velocity: Vector,
     speed: f32,
     movement_progress: f32,
+    color: Color,
+    color_time: Duration,
 }
 
 impl Snake {
@@ -34,6 +36,8 @@ impl Snake {
             speed,
             velocity: Vector::new(2, 0),
             movement_progress: 0.0,
+            color: Color::Green,
+            color_time: Duration::from_secs(0),
         }
     }
 
@@ -53,7 +57,7 @@ impl Snake {
     }
 
     pub fn detect_collision(&self, point: Point) -> bool {
-        self.body.iter().any(|part| *part == point)
+        self.body.contains(&point)
     }
 
     pub fn grow(&mut self, amount: usize) {
@@ -64,14 +68,14 @@ impl Snake {
 impl Entity for Snake {
     type Input = PlayerInput;
 
-    fn draw(&self) -> Vec<DrawInstruction> {
+    fn draw(&self) -> Vec<DrawInstruction<'_>> {
         self.body
             .iter()
             .map(|&position| DrawInstruction::Text {
                 position,
                 content: "██",
                 style: Style {
-                    fg: Color::Green,
+                    fg: self.color,
                     ..Default::default()
                 },
             })
@@ -79,7 +83,21 @@ impl Entity for Snake {
     }
 
     fn update(&mut self, elapsed: &Duration) {
+        self.color_time += *elapsed;
         self.movement_progress += self.speed * elapsed.as_secs_f32();
+
+        self.color = match (self.color, self.color_time > Duration::from_secs(1)) {
+            (Color::Red, true) => Color::Green,
+            (Color::Green, true) => Color::Yellow,
+            (Color::Yellow, true) => Color::Blue,
+            (Color::Blue, true) => Color::Red,
+            _ => self.color,
+        };
+
+        if self.color_time > Duration::from_secs(1) {
+            self.color_time = Duration::from_secs(0);
+        }
+
         while self.movement_progress > 1.0 {
             self.movement_progress -= 1.0;
 

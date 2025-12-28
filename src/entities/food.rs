@@ -29,7 +29,7 @@ impl Food {
 impl Entity for Food {
     type Input = PlayerInput;
 
-    fn draw(&self) -> Vec<DrawInstruction> {
+    fn draw(&self) -> Vec<DrawInstruction<'_>> {
         vec![DrawInstruction::Text {
             content: "⬤",
             position: self.position,
