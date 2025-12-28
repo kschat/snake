@@ -4,6 +4,7 @@ mod entities;
 mod scenes;
 
 use anyhow::{Context, Result};
+use clap::Parser;
 use config::GameConfig;
 use crossterm::terminal;
 use engine::{
@@ -15,7 +16,6 @@ use std::{
     io::{BufWriter, stdout},
     time::Duration,
 };
-use structopt::StructOpt;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PlayerInput {
@@ -29,42 +29,42 @@ pub enum PlayerInput {
     Quit,
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "snake")]
+#[derive(Debug, clap::Parser)]
+#[command(version, about)]
 pub struct CommandOptions {
-    #[structopt(
+    #[arg(
         short,
         long,
-        default_value = "15.0",
+        default_value_t = 15.0,
         help = "Set how many tiles per second the snakes moves"
     )]
     speed: f32,
 
-    #[structopt(
+    #[arg(
         short,
         long,
-        default_value = "2",
+        default_value_t = 2,
         help = "Set the rate at which the snake grows when eating food"
     )]
     grow_rate: usize,
 
-    #[structopt(
+    #[arg(
         short,
         long,
-        default_value = "15",
+        default_value_t = 15,
         help = "Set the max frame rate to target"
     )]
     frame_rate: u8,
 
-    #[structopt(long, help = "Display the current frame rate")]
+    #[arg(long, help = "Display the current frame rate")]
     show_frame_rate: bool,
 
-    #[structopt(short = "b", long, help = "Wrap the game area in a border")]
+    #[arg(short = 'b', long, help = "Wrap the game area in a border")]
     show_border: bool,
 }
 
 fn main() -> Result<()> {
-    let command_options = CommandOptions::from_args();
+    let command_options = CommandOptions::parse();
 
     let terminal_size =
         terminal::size().with_context(|| "Failed to get terminal size".to_string())?;

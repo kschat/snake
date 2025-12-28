@@ -17,10 +17,10 @@ missing_safety_doc = "deny"
 undocumented_unsafe_blocks = "deny"
 
 [dependencies]
+clap = { version = "4.5.53", features = ["derive"] }
 crossterm = "0.29"
 rand = "0.9.2"
 impl_ops = "0.1.1"
 num-traits = "0.2"
 anyhow = "1.0.100"
-structopt = "0.3.26"
 unicode-segmentation = "1.12.0"
