@@ -11,10 +11,10 @@ use super::snake::Snake;
 // TODO make world an entity manager
 #[derive(Debug)]
 pub struct World {
+    config: GameConfig,
     origin: Point,
     diagonal: Point,
     show_border: bool,
-    snake_speed: f32,
     rng: RefCell<ThreadRng>,
 }
 
@@ -22,10 +22,10 @@ impl World {
     pub fn new(config: &GameConfig, origin: Point) -> Self {
         let diagonal = Point::new(config.columns - origin.x, config.rows - origin.y);
         Self {
+            config: config.clone(),
             origin,
             diagonal,
             show_border: config.show_border,
-            snake_speed: config.snake.speed,
             rng: RefCell::new(rand::rng()),
         }
     }
@@ -53,7 +53,7 @@ impl World {
     }
 
     pub fn create_snake(&self) -> Snake {
-        Snake::new(self.origin + Point::new(2usize, 2), 6, self.snake_speed)
+        Snake::new(self.origin + Point::new(2usize, 2), &self.config.snake)
     }
 }
 
@@ -76,7 +76,7 @@ impl Entity for World {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::SnakeConfig;
+    use crate::{SnakeStyle, config::SnakeConfig};
 
     use super::*;
 
@@ -84,6 +84,8 @@ mod tests {
         snake: SnakeConfig {
             speed: 5.0,
             grow_rate: 1,
+            size: 6,
+            style: SnakeStyle::Green,
         },
         rows: 6,
         columns: 6,

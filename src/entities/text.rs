@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use std::cmp;
+
 use crossterm::style::Color;
 use unicode_segmentation::UnicodeSegmentation;
 
@@ -31,7 +33,7 @@ impl Text {
             .value
             .split('\n')
             .map(|line| line.graphemes(true).count())
-            .fold(usize::MIN, |a, b| a.max(b));
+            .fold(0, cmp::max);
 
         if let Some(center_point) = self.center_point {
             self.position = self.calcuate_center(center_point);

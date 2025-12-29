@@ -4,9 +4,9 @@ mod entities;
 mod scenes;
 
 use anyhow::{Context, Result};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use config::GameConfig;
-use crossterm::terminal;
+use crossterm::{style::Color, terminal};
 use engine::{
     game_loop::{GameLoop, GameLoopConfig},
     renderer::Renderer,
@@ -49,6 +49,14 @@ pub struct CommandOptions {
     grow_rate: usize,
 
     #[arg(
+        value_enum,
+        long,
+        default_value_t = SnakeStyle::Green,
+        help = "Set style of the snake"
+    )]
+    snake_style: SnakeStyle,
+
+    #[arg(
         short,
         long,
         default_value_t = 15,
@@ -61,6 +69,36 @@ pub struct CommandOptions {
 
     #[arg(short = 'b', long, help = "Wrap the game area in a border")]
     show_border: bool,
+}
+
+#[derive(Clone, Copy, Debug, ValueEnum, Eq, PartialEq)]
+pub enum SnakeStyle {
+    Black,
+    Red,
+    Green,
+    Yellow,
+    Blue,
+    Magenta,
+    Cyan,
+    White,
+    Grey,
+    Flash,
+}
+
+impl SnakeStyle {
+    pub fn initial_color(&self) -> Color {
+        match self {
+            Self::Flash | Self::Green => Color::Green,
+            Self::Black => Color::Black,
+            Self::Red => Color::Red,
+            Self::Yellow => Color::Yellow,
+            Self::Blue => Color::Blue,
+            Self::Magenta => Color::Magenta,
+            Self::Cyan => Color::Cyan,
+            Self::White => Color::White,
+            Self::Grey => Color::Grey,
+        }
+    }
 }
 
 fn main() -> Result<()> {

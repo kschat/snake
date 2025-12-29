@@ -1,4 +1,4 @@
-use crate::CommandOptions;
+use crate::{CommandOptions, SnakeStyle};
 
 #[derive(Debug, Clone)]
 pub struct GameConfig {
@@ -16,6 +16,8 @@ impl GameConfig {
             snake: SnakeConfig {
                 grow_rate: command_options.grow_rate,
                 speed: command_options.speed,
+                size: 6,
+                style: command_options.snake_style,
             },
             columns: columns as usize,
             rows: rows as usize,
@@ -30,4 +32,6 @@ impl GameConfig {
 pub struct SnakeConfig {
     pub grow_rate: usize,
     pub speed: f32,
+    pub size: usize,
+    pub style: SnakeStyle,
 }

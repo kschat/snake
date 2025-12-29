@@ -2,7 +2,8 @@ use crossterm::style::Color;
 use std::{iter::repeat_with, time::Duration};
 
 use crate::{
-    PlayerInput,
+    PlayerInput, SnakeStyle,
+    config::SnakeConfig,
     engine::{
         point::{Point, Vector},
         renderer::{DrawInstruction, Style},
@@ -19,25 +20,27 @@ pub struct Snake {
     movement_progress: f32,
     color: Color,
     color_time: Duration,
+    config: SnakeConfig,
 }
 
 impl Snake {
-    pub fn new<T: Into<Point>>(head: T, size: usize, speed: f32) -> Self {
+    pub fn new<T: Into<Point>>(head: T, config: &SnakeConfig) -> Self {
         let head: Point = head.into();
         let body = repeat_with(|| head)
             .enumerate()
-            .map(|(index, point)| point + Point::new((size - index) * 2, 0))
-            .take(size)
+            .map(|(index, point)| point + Point::new((config.size - index) * 2, 0))
+            .take(config.size)
             .collect();
 
         Self {
             body,
-            size,
-            speed,
+            size: config.size,
+            speed: config.speed,
             velocity: Vector::new(2, 0),
             movement_progress: 0.0,
-            color: Color::Green,
+            color: config.style.initial_color(),
             color_time: Duration::from_secs(0),
+            config: config.clone(),
         }
     }
 
@@ -86,13 +89,15 @@ impl Entity for Snake {
         self.color_time += *elapsed;
         self.movement_progress += self.speed * elapsed.as_secs_f32();
 
-        self.color = match (self.color, self.color_time > Duration::from_secs(1)) {
-            (Color::Red, true) => Color::Green,
-            (Color::Green, true) => Color::Yellow,
-            (Color::Yellow, true) => Color::Blue,
-            (Color::Blue, true) => Color::Red,
-            _ => self.color,
-        };
+        if self.config.style == SnakeStyle::Flash {
+            self.color = match (self.color, self.color_time > Duration::from_secs(1)) {
+                (Color::Red, true) => Color::Green,
+                (Color::Green, true) => Color::Yellow,
+                (Color::Yellow, true) => Color::Blue,
+                (Color::Blue, true) => Color::Red,
+                _ => self.color,
+            };
+        }
 
         if self.color_time > Duration::from_secs(1) {
             self.color_time = Duration::from_secs(0);
