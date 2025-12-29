@@ -2,14 +2,25 @@
 name = "snake"
 version = "0.1.4"
 authors = ["kschat <kyleschattler@gmail.com>"]
-edition = "2021"
+edition = "2024"
 license = "MIT"
 
+[lints.rust]
+warnings = "deny"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+too_many_lines = "deny"
+unnecessary_wraps = "deny"
+await_holding_refcell_ref = "deny"
+missing_safety_doc = "deny"
+undocumented_unsafe_blocks = "deny"
+
 [dependencies]
-crossterm = "0.27"
-rand = "0.8.5"
+clap = { version = "4.5.53", features = ["derive"] }
+crossterm = "0.29"
+rand = "0.9.2"
 impl_ops = "0.1.1"
 num-traits = "0.2"
-anyhow = "1.0.76"
-structopt = "0.3.26"
-unicode-segmentation = "1.10.1"
+anyhow = "1.0.100"
+unicode-segmentation = "1.12.0"

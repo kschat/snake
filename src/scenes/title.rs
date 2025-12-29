@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use crossterm::{
     event::{Event, KeyCode},
     style::Color,
@@ -6,6 +6,7 @@ use crossterm::{
 use std::{fmt::Display, time::Duration};
 
 use crate::{
+    GameConfig, PlayerInput,
     engine::{
         game_loop::GameLoopSignal,
         point::Point,
@@ -14,9 +15,9 @@ use crate::{
         traits::{Entity, GameScene},
     },
     entities::text::Text,
-    snake_scene::SnakeScene,
-    PlayerInput, SnakeConfig,
 };
+
+use super::snake::SnakeScene;
 
 const TITLE: &str = "
 ███████╗███╗   ██╗ █████╗ ██╗  ██╗███████╗
@@ -96,25 +97,25 @@ pub struct TitleScene {
 }
 
 impl TitleScene {
-    pub fn new(config: SnakeConfig) -> Self {
+    pub fn new(config: GameConfig) -> Self {
         let origin = Point::new(0, 0);
         let diagonal = Point::new(config.columns - origin.x, config.rows - origin.y);
         let center = Self::get_center_position(origin, diagonal);
 
         let title_text = Text::default()
-            .with_value(TITLE.into())
+            .with_value(TITLE)
             .center(center - Point::new(0usize, 15))
             .with_fg(Color::Yellow)
             .show();
 
         let static_snake = Text::default()
-            .with_value(STATIC_SNAKE.into())
+            .with_value(STATIC_SNAKE)
             .center(center - Point::new(0usize, 8))
             .with_fg(Color::Green)
             .show();
 
         let static_food = Text::default()
-            .with_value(STATIC_FOOD.into())
+            .with_value(STATIC_FOOD)
             .center(Point::new(center.x + 18, center.y - 4))
             .with_fg(Color::Red)
             .show();
@@ -162,7 +163,7 @@ impl TitleScene {
 }
 
 impl GameScene for TitleScene {
-    fn draw(&mut self, _timestep: &Timestep) -> Vec<DrawInstruction> {
+    fn draw(&mut self, _timestep: &Timestep) -> Vec<DrawInstruction<'_>> {
         vec![
             self.options
                 .iter()
@@ -214,7 +215,7 @@ impl GameScene for TitleScene {
             PlayerInput::Up => self.select_previous_option(),
             PlayerInput::Down => self.select_next_option(),
             PlayerInput::Select => {
-                return Ok(MenuOption::try_from(self.selected_index)?.perform_action())
+                return Ok(MenuOption::try_from(self.selected_index)?.perform_action());
             }
             _ => (),
         }

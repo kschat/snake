@@ -37,7 +37,7 @@ impl Score {
 impl Entity for Score {
     type Input = PlayerInput;
 
-    fn draw(&self) -> Vec<DrawInstruction> {
+    fn draw(&self) -> Vec<DrawInstruction<'_>> {
         vec![DrawInstruction::Text {
             content: &self.content,
             position: self.position,

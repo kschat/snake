@@ -7,13 +7,13 @@ use super::{game_loop::GameLoopSignal, renderer::DrawInstruction, timestep::Time
 pub trait Entity {
     type Input;
 
-    fn draw(&self) -> Vec<DrawInstruction>;
+    fn draw(&self) -> Vec<DrawInstruction<'_>>;
     fn update(&mut self, _elapsed: &Duration) {}
     fn process_input(&mut self, _input: &Self::Input) {}
 }
 
 pub trait GameScene: 'static {
-    fn draw(&mut self, timestep: &Timestep) -> Vec<DrawInstruction>;
+    fn draw(&mut self, timestep: &Timestep) -> Vec<DrawInstruction<'_>>;
     fn update(&mut self, elapsed: &Duration) -> Result<GameLoopSignal>;
     fn process_input(&mut self, event: &Event) -> Result<GameLoopSignal>;
 }

@@ -2,12 +2,13 @@ use crossterm::style::Color;
 use std::{iter::repeat_with, time::Duration};
 
 use crate::{
+    PlayerInput, SnakeStyle,
+    config::SnakeConfig,
     engine::{
         point::{Point, Vector},
         renderer::{DrawInstruction, Style},
         traits::Entity,
     },
-    PlayerInput,
 };
 
 #[derive(Debug)]
@@ -17,23 +18,29 @@ pub struct Snake {
     velocity: Vector,
     speed: f32,
     movement_progress: f32,
+    color: Color,
+    color_time: Duration,
+    config: SnakeConfig,
 }
 
 impl Snake {
-    pub fn new<T: Into<Point>>(head: T, size: usize, speed: f32) -> Self {
+    pub fn new<T: Into<Point>>(head: T, config: &SnakeConfig) -> Self {
         let head: Point = head.into();
         let body = repeat_with(|| head)
             .enumerate()
-            .map(|(index, point)| point + Point::new((size - index) * 2, 0))
-            .take(size)
+            .map(|(index, point)| point + Point::new((config.size - index) * 2, 0))
+            .take(config.size)
             .collect();
 
         Self {
             body,
-            size,
-            speed,
+            size: config.size,
+            speed: config.speed,
             velocity: Vector::new(2, 0),
             movement_progress: 0.0,
+            color: config.style.initial_color(),
+            color_time: Duration::from_secs(0),
+            config: config.clone(),
         }
     }
 
@@ -53,7 +60,7 @@ impl Snake {
     }
 
     pub fn detect_collision(&self, point: Point) -> bool {
-        self.body.iter().any(|part| *part == point)
+        self.body.contains(&point)
     }
 
     pub fn grow(&mut self, amount: usize) {
@@ -64,14 +71,14 @@ impl Snake {
 impl Entity for Snake {
     type Input = PlayerInput;
 
-    fn draw(&self) -> Vec<DrawInstruction> {
+    fn draw(&self) -> Vec<DrawInstruction<'_>> {
         self.body
             .iter()
             .map(|&position| DrawInstruction::Text {
                 position,
                 content: "██",
                 style: Style {
-                    fg: Color::Green,
+                    fg: self.color,
                     ..Default::default()
                 },
             })
@@ -79,7 +86,23 @@ impl Entity for Snake {
     }
 
     fn update(&mut self, elapsed: &Duration) {
+        self.color_time += *elapsed;
         self.movement_progress += self.speed * elapsed.as_secs_f32();
+
+        if self.config.style == SnakeStyle::Flash {
+            self.color = match (self.color, self.color_time > Duration::from_secs(1)) {
+                (Color::Red, true) => Color::Green,
+                (Color::Green, true) => Color::Yellow,
+                (Color::Yellow, true) => Color::Blue,
+                (Color::Blue, true) => Color::Red,
+                _ => self.color,
+            };
+        }
+
+        if self.color_time > Duration::from_secs(1) {
+            self.color_time = Duration::from_secs(0);
+        }
+
         while self.movement_progress > 1.0 {
             self.movement_progress -= 1.0;
 
